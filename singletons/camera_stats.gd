@@ -25,8 +25,9 @@ const STICK_PITCH_SPEED := 90.0;
 const MOUSE_SENSITIVITY := 0.25;        # Degrees per pixel of mouse movement (hold the right mouse button).
 const MIN_PITCH := -70.0;
 const MAX_PITCH := 10.0;
-const MANUAL_HOLD_TIME := 1.5;          # After you stop steering, the camera waits this long before auto-turning again.
-const PITCH_RETURN_SPEED := 30.0;       # Degrees per second the pitch eases back to DEFAULT_PITCH after the hold.
+const MANUAL_HOLD_TIME := 1.5;          # After you stop steering left / right, the camera waits this long before auto-turning again.
+const PITCH_RETURN_DELAY := 0.2;        # After you stop pushing up / down, the camera waits this long, then eases back...
+const PITCH_RETURN_SPEED := 45.0;       # ...at this many degrees per second, to DEFAULT_PITCH (or a zone's pitch).
 #endregion =====================================================================
 
 #region COLLISION ==============================================================
@@ -42,6 +43,8 @@ const MAX_SHARED_DISTANCE := 17.0;
 const SPLIT_DISTANCE := 18.0;
 const MERGE_DISTANCE := 13.0;
 const SPLIT_DIVIDER_WIDTH := 6.0;        # Pixels.
+# The screen also splits whenever the players are in different camera zones (e.g. one in a fixed zone, one not).
+const ZONE_MERGE_DELAY := 0.5;           # Both must share a zone this long before merging, so walking along an edge doesn't flicker.
 #endregion =====================================================================
 
 #region ZONES ==================================================================

@@ -6,8 +6,9 @@ class_name CameraDirector
 #   SHARED: one full-screen view whose camera frames both players, pulling back as they spread out.
 #   SPLIT:  two side-by-side views (P1 left, P2 right), each following one player.
 #
-# It splits once the players are more than SPLIT_DISTANCE apart and merges once they're back within
-# MERGE_DISTANCE. The gap between the two numbers stops it flickering at the boundary.
+# It splits once the players are more than SPLIT_DISTANCE apart, or are standing in different camera zones.
+# It merges once they're back within MERGE_DISTANCE and have shared a zone (or no zone) for ZONE_MERGE_DELAY.
+# The gaps between those numbers stop it flickering at the boundary.
 # Both views look into the same world; the right-hand one only renders while split.
 
 enum MODES { SHARED, SPLIT }
@@ -19,6 +20,7 @@ enum MODES { SHARED, SPLIT }
 @export var divider: Control;
 
 var mode: MODES = MODES.SHARED;
+var _time_in_same_zone := 0.0;
 
 #region BUILT IN ===================================================================================
 func _ready() -> void:
@@ -28,14 +30,17 @@ func _ready() -> void:
   _set_mode(MODES.SHARED, true);
 #/_ready
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
   if Global.p1_char == null || Global.p2_char == null: return;
   if left_camera.targets.is_empty(): _set_mode(mode, true); # Players spawned since _ready.
 
   var spread := Global.p1_char.global_position.distance_to(Global.p2_char.global_position);
-  if mode == MODES.SHARED && spread > CameraStats.SPLIT_DISTANCE:
+  var zones_differ := Global.p1_char.get_camera_zone() != Global.p2_char.get_camera_zone();
+  _time_in_same_zone = 0.0 if zones_differ else _time_in_same_zone + delta;
+
+  if mode == MODES.SHARED && (spread > CameraStats.SPLIT_DISTANCE || zones_differ):
     _set_mode(MODES.SPLIT);
-  elif mode == MODES.SPLIT && spread < CameraStats.MERGE_DISTANCE:
+  elif mode == MODES.SPLIT && spread < CameraStats.MERGE_DISTANCE && _time_in_same_zone >= CameraStats.ZONE_MERGE_DELAY:
     _set_mode(MODES.SHARED);
   #/if
 #/_physics_process

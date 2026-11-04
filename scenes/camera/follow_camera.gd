@@ -9,8 +9,9 @@ class_name FollowCamera
 #         Camera
 #
 # By default it follows on its own: it trails the players and drifts round behind them when they run sideways.
-# Players can steer it with the right stick (or arrows / right-mouse drag for P1). After MANUAL_HOLD_TIME
-# without steering it goes back to following on its own. A CameraZone the players stand in can override it.
+# Players can steer it with the right stick (or arrows / right-mouse drag for P1). Left / right steering is
+# held for MANUAL_HOLD_TIME, then it goes back to following on its own. Up / down eases back to its natural
+# height as soon as you let go. Inside a fixed CameraZone the zone owns the camera and steering is ignored.
 # All numbers live in CameraStats.
 
 #region PUBLIC VARS ================================================================================
@@ -22,7 +23,8 @@ var controller_ids: Array[int] = [];      # Which players' look input steers thi
 var _yaw := 0.0;                           # Radians.
 var _pitch := deg_to_rad(CameraStats.DEFAULT_PITCH);
 var _distance := CameraStats.DEFAULT_DISTANCE;
-var _time_since_manual := INF;
+var _time_since_yaw_input := INF;
+var _time_since_pitch_input := INF;
 var _has_snapped := false;
 
 @onready var _pivot: Node3D = $Pivot;
@@ -66,7 +68,8 @@ func copy_from(other: FollowCamera) -> void:
   _yaw = other._yaw;
   _pitch = other._pitch;
   _distance = other._distance;
-  _time_since_manual = other._time_since_manual;
+  _time_since_yaw_input = other._time_since_yaw_input;
+  _time_since_pitch_input = other._time_since_pitch_input;
   _has_snapped = true;
   _apply();
 #/copy_from
@@ -78,6 +81,52 @@ func get_yaw() -> float:
 
 #region PRIVATE ====================================================================================
 func _update_rotation(delta: float, zone: CameraZone) -> void:
+  # A fixed zone owns the camera completely: no steering, no auto turn.
+  if zone != null && zone.fixed_angle:
+    var blend := _sharpness_to_weight(CameraStats.ZONE_BLEND_SHARPNESS, delta);
+    _yaw = lerp_angle(_yaw, deg_to_rad(zone.yaw_degrees), blend);
+    _pitch = lerp_angle(_pitch, deg_to_rad(zone.pitch_degrees), blend);
+    return;
+  #/if
+
+  var look := _read_look_input(delta);
+  _update_yaw(delta, look.x);
+  _update_pitch(delta, look.y, zone);
+#/_update_rotation
+
+# Left / right. Steering holds the angle for MANUAL_HOLD_TIME, then auto turn takes over again.
+func _update_yaw(delta: float, look_degrees: float) -> void:
+  if !is_zero_approx(look_degrees):
+    _yaw -= deg_to_rad(look_degrees);
+    _time_since_yaw_input = 0.0;
+    return;
+  #/if
+  _time_since_yaw_input += delta;
+  if _time_since_yaw_input < CameraStats.MANUAL_HOLD_TIME: return;
+
+  # Auto turn: drift behind the players when they run sideways across the screen.
+  var right := Vector3(cos(_yaw), 0.0, -sin(_yaw));
+  var sideways_speed := _get_average_velocity().dot(right);
+  _yaw -= sideways_speed * CameraStats.AUTO_TURN_RATE * delta;
+#/_update_yaw
+
+# Up / down. As soon as you stop pushing up or down, it eases back to its natural height.
+func _update_pitch(delta: float, look_degrees: float, zone: CameraZone) -> void:
+  if !is_zero_approx(look_degrees):
+    _pitch -= deg_to_rad(look_degrees);
+    _pitch = clampf(_pitch, deg_to_rad(CameraStats.MIN_PITCH), deg_to_rad(CameraStats.MAX_PITCH));
+    _time_since_pitch_input = 0.0;
+    return;
+  #/if
+  _time_since_pitch_input += delta;
+  if _time_since_pitch_input < CameraStats.PITCH_RETURN_DELAY: return;
+
+  var wanted_pitch := deg_to_rad(zone.pitch_degrees if zone != null && zone.override_pitch else CameraStats.DEFAULT_PITCH);
+  _pitch = move_toward(_pitch, wanted_pitch, deg_to_rad(CameraStats.PITCH_RETURN_SPEED) * delta);
+#/_update_pitch
+
+# Degrees to turn this frame from every player steering this camera: x is left / right, y is up / down.
+func _read_look_input(delta: float) -> Vector2:
   var stick := Vector2.ZERO;
   var mouse := Vector2.ZERO;
   for player_id in controller_ids:
@@ -87,31 +136,11 @@ func _update_rotation(delta: float, zone: CameraZone) -> void:
   #/for
   stick = stick.limit_length(1.0);
 
-  if !stick.is_zero_approx() || !mouse.is_zero_approx():
-    _time_since_manual = 0.0;
-    _yaw -= deg_to_rad(stick.x * CameraStats.STICK_YAW_SPEED * delta + mouse.x * CameraStats.MOUSE_SENSITIVITY);
-    _pitch -= deg_to_rad(stick.y * CameraStats.STICK_PITCH_SPEED * delta + mouse.y * CameraStats.MOUSE_SENSITIVITY);
-    _pitch = clampf(_pitch, deg_to_rad(CameraStats.MIN_PITCH), deg_to_rad(CameraStats.MAX_PITCH));
-    return;
-  #/if
-  _time_since_manual += delta;
-
-  var blend := _sharpness_to_weight(CameraStats.ZONE_BLEND_SHARPNESS, delta);
-  if zone != null && zone.fixed_angle:
-    _yaw = lerp_angle(_yaw, deg_to_rad(zone.yaw_degrees), blend);
-    _pitch = lerp_angle(_pitch, deg_to_rad(zone.pitch_degrees), blend);
-    return;
-  #/if
-  if _time_since_manual < CameraStats.MANUAL_HOLD_TIME: return;
-
-  # Auto turn: drift behind the players when they run sideways across the screen.
-  var right := Vector3(cos(_yaw), 0.0, -sin(_yaw));
-  var sideways_speed := _get_average_velocity().dot(right);
-  _yaw -= sideways_speed * CameraStats.AUTO_TURN_RATE * delta;
-
-  var wanted_pitch := deg_to_rad(zone.pitch_degrees if zone != null && zone.override_pitch else CameraStats.DEFAULT_PITCH);
-  _pitch = move_toward(_pitch, wanted_pitch, deg_to_rad(CameraStats.PITCH_RETURN_SPEED) * delta);
-#/_update_rotation
+  return Vector2(
+    stick.x * CameraStats.STICK_YAW_SPEED * delta + mouse.x * CameraStats.MOUSE_SENSITIVITY,
+    stick.y * CameraStats.STICK_PITCH_SPEED * delta + mouse.y * CameraStats.MOUSE_SENSITIVITY
+  );
+#/_read_look_input
 
 func _update_distance(delta: float, zone: CameraZone) -> void:
   var wanted := _get_wanted_distance(zone);
