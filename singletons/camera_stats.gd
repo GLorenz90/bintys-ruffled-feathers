@@ -21,9 +21,9 @@ const AUTO_TURN_RATE := 0.1;            # Radians per second, per m/s of sideway
 
 #region MANUAL CONTROL =========================================================
 const STICK_YAW_SPEED := 160.0;         # Degrees per second at full right-stick (or arrow keys).
-const STICK_PITCH_SPEED := 90.0;
-const STICK_ACCELERATION := 700.0;      # Degrees per second squared: full yaw speed takes about 0.23 s, so taps are small nudges.
-const STICK_DECELERATION := 900.0;      # How quickly the turn winds down after letting go of the stick.
+const STICK_PITCH_SPEED := 110.0;
+const STICK_ACCELERATION := 400.0;      # Degrees per second squared: full yaw speed takes about 0.23 s, so taps are small nudges.
+const STICK_DECELERATION := 500.0;      # How quickly the turn winds down after letting go of the stick.
 const MOUSE_SENSITIVITY := 0.25;        # Degrees per pixel of mouse movement (hold the right mouse button).
 const MIN_PITCH := -70.0;
 const MAX_PITCH := 10.0;
