@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://dffslabmmykrs"]
+
+[ext_resource type="Script" uid="uid://behr317de6ax7" path="res://scenes/ui/test_hud.gd" id="1_1m8re"]
+
+[node name="Control" type="Control" unique_id=1170973187]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1m8re")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1033629565]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.47843137)
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1199086383]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 149.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=1403326738]
+layout_mode = 2
+theme_override_constants/separation = 42
+
+[node name="Health" type="HBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1701667654]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/Health" unique_id=639806685]
+layout_mode = 2
+text = "Health:"
+
+[node name="Value" type="Label" parent="MarginContainer/HBoxContainer/Health" unique_id=188606344]
+layout_mode = 2
+text = "0"
+
+[node name="Silver" type="HBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=1759522392]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/Silver" unique_id=1937091623]
+layout_mode = 2
+text = "Silver:"
+
+[node name="Value" type="Label" parent="MarginContainer/HBoxContainer/Silver" unique_id=2146521570]
+layout_mode = 2
+text = "0"

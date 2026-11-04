@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://c4xsnat447xas"]
+
+[ext_resource type="PackedScene" uid="uid://i8u8b77dafh4" path="res://resources/meshes/_raw/Silver_Nugget_Medium.fbx" id="1_vcm71"]
+[ext_resource type="Material" uid="uid://dgehaoyxd56o0" path="res://resources/textures/kaykit_colors.tres" id="2_d8b8i"]
+
+[node name="Silver_Nugget_Medium" unique_id=1284487378 instance=ExtResource("1_vcm71")]
+
+[node name="Silver_Nugget_Medium" parent="." index="0" unique_id=1678608679]
+surface_material_override/0 = ExtResource("2_d8b8i")

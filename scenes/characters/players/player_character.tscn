@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://blcewvxyjg61h"]
+
+[ext_resource type="PackedScene" uid="uid://b6q1xfhb531nx" path="res://scenes/characters/character.tscn" id="1_7gakc"]
+[ext_resource type="Script" uid="uid://cylm4otlpxyoe" path="res://scenes/characters/players/player_character.gd" id="1_h3p8d"]
+[ext_resource type="Shape3D" uid="uid://70johm7o3e0g" path="res://resources/shapes/player_shape_normal.tres" id="2_ai33d"]
+[ext_resource type="CapsuleMesh" uid="uid://c0q23a4tc0hle" path="res://resources/meshes/test_body.tres" id="4_hq71a"]
+[ext_resource type="Texture2D" uid="uid://brkuhx7nvq20f" path="res://resources/images/icon.svg" id="5_0dwey"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hq71a"]
+albedo_texture = ExtResource("5_0dwey")
+
+[node name="PlayerCharacter" unique_id=1869617066 instance=ExtResource("1_7gakc")]
+script = ExtResource("1_h3p8d")
+char_type = 0
+is_p1 = true
+debug_actions = true
+
+[node name="Collision" parent="." index="0" unique_id=1139686417]
+shape = ExtResource("2_ai33d")
+
+[node name="Body" type="MeshInstance3D" parent="Model" parent_id_path=PackedInt32Array(544756948) index="0" unique_id=841814159]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.0043828, 0)
+cast_shadow = 0
+mesh = ExtResource("4_hq71a")
+surface_material_override/0 = SubResource("StandardMaterial3D_hq71a")
+
+[node name="Decal" parent="." index="4" unique_id=744139969]
+lower_fade = 0.3

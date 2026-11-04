@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://doumgf3ijf78c"]
+
+[ext_resource type="Script" uid="uid://d1r7bjtmj4lmu" path="res://scenes/attacks/_/attack.gd" id="1_wrmvd"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8vglh"]
+
+[node name="Attack" type="Node3D" unique_id=889527476]
+script = ExtResource("1_wrmvd")
+
+[node name="Area" type="Area3D" parent="." unique_id=539494428]
+
+[node name="Collision" type="CollisionShape3D" parent="Area" unique_id=1706012814]
+shape = SubResource("BoxShape3D_8vglh")
+
+[node name="Effect" type="Node3D" parent="." unique_id=1908251779]

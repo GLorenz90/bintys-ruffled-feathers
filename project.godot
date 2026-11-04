@@ -1,0 +1,57 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Binty's Ruffled Feathers"
+run/main_scene="uid://m8on3ycivsok"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="uid://vgrxdxghjbkt"
+
+[autoload]
+
+CharStats="*uid://dnjeb775bikod"
+Enums="*uid://ccng6rcdheqvl"
+Global="*uid://b5x0ot2nkg52i"
+Settings="*uid://bj3pycrmrie13"
+Signals="*uid://bgf2xcyny2m05"
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900
+window/stretch/mode="viewport"
+window/stretch/scale_mode="integer"
+
+[layer_names]
+
+3d_physics/layer_1="terrain"
+3d_physics/layer_2="player"
+3d_physics/layer_3="enemy"
+3d_physics/layer_4="collectable"
+3d_physics/layer_5="hazard"
+3d_physics/layer_6="player_attack"
+3d_physics/layer_7="enemy_attack"
+3d_physics/layer_8="interactable"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+3d/default_gravity=40.0
+common/physics_interpolation=true
+
+[rendering]
+
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="mobile"

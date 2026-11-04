@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://4crf4p5dg3l1"]
+
+[ext_resource type="PhysicsMaterial" uid="uid://dwpditxm5ev0s" path="res://resources/physics/pickup_physics_mat.tres" id="1_gg01l"]
+[ext_resource type="Script" uid="uid://dffiim5gp48mk" path="res://scenes/items/pickups/_/pickup.gd" id="2_d0157"]
+[ext_resource type="Shape3D" path="res://resources/shapes/icosahedron.tres" id="3_2qpfd"]
+[ext_resource type="Shape3D" uid="uid://c1ywixbu21clg" path="res://resources/shapes/small_pickup_range_shape.tres" id="3_d0157"]
+
+[node name="Pickup" type="RigidBody3D" unique_id=991394463]
+collision_layer = 8
+physics_material_override = ExtResource("1_gg01l")
+max_contacts_reported = 2
+script = ExtResource("2_d0157")
+metadata/_edit_group_ = true
+
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1397057880]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
+shape = ExtResource("3_2qpfd")
+
+[node name="PickupRange" type="Area3D" parent="." unique_id=1083607190]
+collision_layer = 8
+collision_mask = 2
+monitorable = false
+
+[node name="Shape" type="CollisionShape3D" parent="PickupRange" unique_id=2089535353]
+shape = ExtResource("3_d0157")
+
+[node name="Body" type="Node3D" parent="." unique_id=19851593]
+
+[connection signal="body_entered" from="PickupRange" to="." method="_on_pickup_range_body_entered"]

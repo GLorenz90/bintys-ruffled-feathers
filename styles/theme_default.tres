@@ -1,0 +1,29 @@
+[gd_resource type="Theme" format=3 uid="uid://domdts7824yny"]
+
+[ext_resource type="FontFile" uid="uid://da32t0ijg8aw0" path="res://styles/MADE Tommy Soft Medium PERSONAL USE.otf" id="1_ck7vh"]
+[ext_resource type="StyleBox" uid="uid://b5e1xvg0pnil7" path="res://styles/components/btn_disabled.tres" id="2_cxy6w"]
+[ext_resource type="StyleBox" uid="uid://brjp5f4n7onaa" path="res://styles/components/btn_hover.tres" id="3_lgc5o"]
+[ext_resource type="StyleBox" uid="uid://dsouqwphbgbwv" path="res://styles/components/btn_normal.tres" id="4_delre"]
+[ext_resource type="StyleBox" uid="uid://bdc85a16gy32r" path="res://styles/components/btn_pressed.tres" id="5_sixhd"]
+[ext_resource type="Texture2D" uid="uid://cskgygrmrh3jf" path="res://resources/images/ui/slide_dot_color_simple.png" id="6_hs5wa"]
+[ext_resource type="StyleBox" uid="uid://rwyee5iapmfj" path="res://styles/components/slider.tres" id="7_l0vq7"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_jcpk7"]
+
+[resource]
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/font_sizes/font_size = 30
+Button/fonts/font = ExtResource("1_ck7vh")
+Button/styles/disabled = ExtResource("2_cxy6w")
+Button/styles/focus = SubResource("StyleBoxEmpty_jcpk7")
+Button/styles/hover = ExtResource("3_lgc5o")
+Button/styles/normal = ExtResource("4_delre")
+Button/styles/pressed = ExtResource("5_sixhd")
+HSlider/icons/grabber = ExtResource("6_hs5wa")
+HSlider/icons/grabber_disabled = ExtResource("6_hs5wa")
+HSlider/icons/grabber_highlight = ExtResource("6_hs5wa")
+HSlider/styles/grabber_area = ExtResource("7_l0vq7")
+HSlider/styles/grabber_area_highlight = ExtResource("7_l0vq7")
+HSlider/styles/slider = ExtResource("7_l0vq7")
+Label/font_sizes/font_size = 30
+Label/fonts/font = ExtResource("1_ck7vh")

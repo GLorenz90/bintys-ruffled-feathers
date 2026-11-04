@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://b2ja7ou62doac"]
+
+[ext_resource type="PackedScene" uid="uid://doumgf3ijf78c" path="res://scenes/attacks/_/attack.tscn" id="1_qwtnv"]
+[ext_resource type="Script" uid="uid://1ii3d6fcdcjn" path="res://scenes/attacks/swing_attack_2.gd" id="2_qwtnv"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_0dwey"]
+radius = 1.1655273
+height = 2.8510742
+
+[sub_resource type="SphereMesh" id="SphereMesh_lusrb"]
+radius = 0.15
+
+[node name="Attack" unique_id=889527476 instance=ExtResource("1_qwtnv")]
+script = ExtResource("2_qwtnv")
+swing_arc_degrees = -240.0
+spawn_offset = Vector3(0, 1, 0)
+
+[node name="Collision" parent="Area" parent_id_path=PackedInt32Array(539494428) index="0" unique_id=1706012814]
+transform = Transform3D(-4.3711385e-08, 0.99999994, -4.371139e-08, 0, -4.3711385e-08, -1, -0.99999994, -4.3711385e-08, 1.9106855e-15, 0, 0, -0.23371649)
+shape = SubResource("CapsuleShape3D_0dwey")
+
+[node name="Effect" parent="." index="1" unique_id=1908251779]
+transform = Transform3D(-0.5, 0, 0.8660253, 0, 1, 0, -0.8660253, 0, -0.5, 0, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Effect" index="0" unique_id=1879135265]
+transform = Transform3D(1.9106855e-15, 4.371139e-08, -1, 1, -4.371139e-08, 0, -4.371139e-08, -1, -4.371139e-08, 0, 0, -0.841)
+mesh = SubResource("SphereMesh_lusrb")

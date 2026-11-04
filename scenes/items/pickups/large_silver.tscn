@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://bjo8m3kj1x3r2"]
+
+[ext_resource type="PackedScene" uid="uid://4crf4p5dg3l1" path="res://scenes/items/pickups/_/pickup.tscn" id="1_j73l5"]
+[ext_resource type="Shape3D" uid="uid://s84r50nqc80d" path="res://resources/shapes/large_pickup_range_shape.tres" id="3_6g0q4"]
+[ext_resource type="PackedScene" uid="uid://cvjc7vowycn7a" path="res://resources/meshes/silver_nugget_large.tscn" id="4_jvkdy"]
+
+[node name="Small Silver" unique_id=991394463 instance=ExtResource("1_j73l5")]
+money_value = 100
+
+[node name="Collision" parent="." index="0" unique_id=1397057880]
+transform = Transform3D(0.19, 0, 0, 0, 0.19, 0, 0, 0, 0.19, 0, 0, 0)
+
+[node name="Shape" parent="PickupRange" parent_id_path=PackedInt32Array(1083607190) index="0" unique_id=2089535353]
+shape = ExtResource("3_6g0q4")
+
+[node name="Silver_Nugget_Large" parent="Body" parent_id_path=PackedInt32Array(19851593) index="0" unique_id=533693687 instance=ExtResource("4_jvkdy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0054473877, 0, -0.0045394152)
