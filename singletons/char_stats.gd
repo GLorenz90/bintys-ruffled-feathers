@@ -1,66 +1,77 @@
 extends Node
 
-#region CONSTANTS ==============================================================
-const MAX_VELOCITY := 50.0;
-const MAX_COYOTE_TIME := 0.15;
-const MAX_INPUT_BUFFER_TIME := 0.2;
+# Every number that decides how Binty and Glinty feel lives here, grouped by move.
+# Speeds are metres per second, accelerations metres per second squared, times in seconds.
+# Gravity itself is the project setting physics/3d/default_gravity (40).
+#
+# BASE_ values are the defaults. ADJUST_ values are added on top by power-ups and always start at 0 on a new game.
+# Read the combined value through the matching getter (RUN_SPEED, JUMP_VELOCITY, ...), never BASE_ directly.
 
-const BASE_WALK_SPEED := 6;
+#region INPUT ==================================================================
+const INPUT_BUFFER_TIME := 0.15;        # A press this early still counts (e.g. jump just before landing).
+const COYOTE_TIME := 0.12;              # You can still jump this long after running off a ledge.
+#endregion =====================================================================
+
+#region RUN ====================================================================
+const BASE_RUN_SPEED := 8.0;            # Top speed at full stick.
+const RUN_ACCELERATION := 60.0;         # Reaches top speed in about 0.13 s.
+const RUN_DECELERATION := 50.0;         # Stops in about 0.16 s after letting go.
+const TURNAROUND_DECELERATION := 90.0;  # Braking when the stick points against your movement (the skid).
+const TURN_SPEED := 14.0;               # How quickly the body swings round to face where you're going.
+#endregion =====================================================================
+
+#region JUMP AND AIR ===========================================================
+const BASE_JUMP_VELOCITY := 15.0;       # Upward speed at take-off. Full hold reaches about 2.8 m.
+const JUMP_CUT_MULTIPLIER := 0.5;       # Letting go of jump early multiplies upward speed by this (short hops).
+const FALL_GRAVITY_MULTIPLIER := 1.6;   # Falling is heavier than rising, so jumps don't feel floaty.
+const MAX_FALL_SPEED := 40.0;
+const AIR_ACCELERATION := 30.0;         # Steering in the air is weaker than on the ground.
+const AIR_DECELERATION := 8.0;
+#endregion =====================================================================
+
+#region WING FLAP ==============================================================
+const BASE_FLAP_TIME := 1.0;            # Longest a single flap can last. One flap per time in the air.
+const FLAP_BOOST := 3.0;                # Small upward pop when the flap starts.
+const FLAP_FALL_SPEED := 2.0;           # Slow, steady descent while flapping.
+const FLAP_SETTLE_RATE := 25.0;         # How fast vertical speed eases toward FLAP_FALL_SPEED.
+const FLAP_MIN_HEIGHT := 1.0;           # Closer to the ground than this, a jump press is saved for landing instead of flapping.
+#endregion =====================================================================
+
+#region ROLL ===================================================================
 const BASE_ROLL_SPEED := 18.0;
-const BASE_JUMP_TIME := 0.08;
-const BASE_JUMP_VELOCITY := 15.0;
-const BASE_HURT_VELOCITY := 18.0;
-const BASE_MAX_HEALTH := 6;
-
-const HURT_TIME := .75;
-const INVULN_TIME := 2.0;
-const HURT_KNOCKBACK_SPEED := 8.0;
 const ROLL_TIME := 0.3;
+#endregion =====================================================================
 
-# duration -1 means cannot be interrupted, and lasts forever. INF means it can always be interrupted
-var ACTION_RULES = {
-  # Neutral States
-  Enums.CHAR_STATES.INIT:       { flag = null, move = 0.0, ground_only = false,  turn = false, attack = false, roll = false, jump = false, interrupt_after = -1.0,            state_duration = INF },
-  Enums.CHAR_STATES.FREE:       { flag = null, move = 1.0, ground_only = true,   turn = true,  attack = true,  roll = true,  jump = true,  interrupt_after = 0.0,             state_duration = INF },
-  Enums.CHAR_STATES.MIDAIR:     { flag = null, move = 1.0, ground_only = false,  turn = true,  attack = true,  roll = false, jump = false, interrupt_after = 0.0,             state_duration = INF },
+#region ATTACK (placeholder until M3) ==========================================
+const ATTACK_TIME := 0.25;              # How long one swing lasts.
+const ATTACK_CHAIN_AFTER := 0.12;       # The next swing can start this far into the current one.
+const ATTACK_MOVE_MULTIPLIER := 0.3;    # Fraction of run speed while swinging.
+#endregion =====================================================================
 
-  # Movements
-  Enums.CHAR_STATES.JUMPING:    { flag = "jump", move = 1.0, ground_only = true,   turn = true,  attack = true,  roll = false, jump = false, interrupt_after = 0.0,           state_duration = INF },
-  Enums.CHAR_STATES.ROLLING:    { flag = "roll", move = 0.0, ground_only = true,   turn = false, attack = true,  roll = false, jump = true,  interrupt_after = 0.0,           state_duration = ROLL_TIME },
-
-  # Attacks
-  Enums.CHAR_STATES.SWORD_1:    { flag = "attack", move = 0.3, ground_only = false,  turn = false, attack = true,  roll = true,  jump = true,  interrupt_after = 0.1,         state_duration = 0.2 },
-  Enums.CHAR_STATES.SWORD_2:    { flag = "attack", move = 0.3, ground_only = false,  turn = false, attack = false, roll = true,  jump = true,  interrupt_after = 0.2,         state_duration = 0.3 },
-
-  # Abilities
-
-  # Special states with their own rules to enter and exit
-  Enums.CHAR_STATES.INTERACT:   { flag = null, move = 0.0, ground_only = true,   turn = false, attack = false, roll = false, jump = false, interrupt_after = -1.0,          state_duration = -1.0 },
-  Enums.CHAR_STATES.HURT:       { flag = null, move = 0.0, ground_only = false,  turn = false, attack = false, roll = false, jump = false, interrupt_after = -1.0,          state_duration = HURT_TIME },
-}
-#endregion
+#region HEALTH =================================================================
+const BASE_MAX_HEALTH := 6;
+#endregion =====================================================================
 
 #region ADJUSTABLES ============================================================
-# These should always start at 0 on new game.
-var ADJUST_WALK_SPEED := 0.0;
-var ADJUST_ROLL_SPEED := 0.0;
-var ADJUST_JUMP_TIME := 0.0;
+var ADJUST_RUN_SPEED := 0.0;
 var ADJUST_JUMP_VELOCITY := 0.0;
+var ADJUST_FLAP_TIME := 0.0;
+var ADJUST_ROLL_SPEED := 0.0;
 var ADJUST_MAX_HEALTH := 0;
 
-var WALK_SPEED: float:
-  get: return BASE_WALK_SPEED + ADJUST_WALK_SPEED;
-var ROLL_SPEED: float:
-  get: return BASE_ROLL_SPEED + ADJUST_ROLL_SPEED;
-var JUMP_TIME: float:
-  get: return BASE_JUMP_TIME + ADJUST_JUMP_TIME;
+var RUN_SPEED: float:
+  get: return BASE_RUN_SPEED + ADJUST_RUN_SPEED;
 var JUMP_VELOCITY: float:
   get: return BASE_JUMP_VELOCITY + ADJUST_JUMP_VELOCITY;
+var FLAP_TIME: float:
+  get: return BASE_FLAP_TIME + ADJUST_FLAP_TIME;
+var ROLL_SPEED: float:
+  get: return BASE_ROLL_SPEED + ADJUST_ROLL_SPEED;
 var MAX_HEALTH: int:
   get: return BASE_MAX_HEALTH + ADJUST_MAX_HEALTH;
-#endregion
+#endregion =====================================================================
 
-#region PLAYER STATS =========================================================
+#region PLAYER STATS ===========================================================
 var P1_CURRENT_HEALTH := MAX_HEALTH:
   set(value):
     P1_CURRENT_HEALTH = clampi(value, 0, MAX_HEALTH);
@@ -69,4 +80,4 @@ var P2_CURRENT_HEALTH := MAX_HEALTH:
     P2_CURRENT_HEALTH = clampi(value, 0, MAX_HEALTH);
 
 var CURRENT_MONEY := 0;
-#endregion
+#endregion =====================================================================

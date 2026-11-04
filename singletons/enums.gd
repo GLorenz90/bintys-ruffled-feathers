@@ -1,15 +1,13 @@
 extends Node
 
-enum CHAR_STATES {
-  INIT,
-  FREE,
-  MIDAIR,
-  JUMPING,
-  ROLLING,
-  INTERACT,
-  SWORD_1,
-  SWORD_2,
-  HURT
+# What a player is doing right now. Each one has its own script in scenes/characters/players/states/.
+enum PLAYER_STATES {
+  GROUNDED,
+  JUMP,
+  FALL,
+  FLAP,
+  ROLL,
+  ATTACK
 }
 
 enum CHARACTERS {
