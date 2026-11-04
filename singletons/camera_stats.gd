@@ -22,12 +22,15 @@ const AUTO_TURN_RATE := 0.1;            # Radians per second, per m/s of sideway
 #region MANUAL CONTROL =========================================================
 const STICK_YAW_SPEED := 160.0;         # Degrees per second at full right-stick (or arrow keys).
 const STICK_PITCH_SPEED := 90.0;
+const STICK_ACCELERATION := 700.0;      # Degrees per second squared: full yaw speed takes about 0.23 s, so taps are small nudges.
+const STICK_DECELERATION := 900.0;      # How quickly the turn winds down after letting go of the stick.
 const MOUSE_SENSITIVITY := 0.25;        # Degrees per pixel of mouse movement (hold the right mouse button).
 const MIN_PITCH := -70.0;
 const MAX_PITCH := 10.0;
 const MANUAL_HOLD_TIME := 1.5;          # After you stop steering left / right, the camera waits this long before auto-turning again.
 const PITCH_RETURN_DELAY := 0.2;        # After you stop pushing up / down, the camera waits this long, then eases back...
-const PITCH_RETURN_SPEED := 45.0;       # ...at this many degrees per second, to DEFAULT_PITCH (or a zone's pitch).
+const PITCH_RETURN_SPEED := 45.0;       # ...at this average speed in degrees per second, along an S-curve (slow, faster, slow),
+const MIN_PITCH_RETURN_TIME := 0.25;    # ...taking at least this long, to DEFAULT_PITCH (or a zone's pitch).
 #endregion =====================================================================
 
 #region COLLISION ==============================================================

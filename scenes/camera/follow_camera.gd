@@ -25,6 +25,15 @@ var _pitch := deg_to_rad(CameraStats.DEFAULT_PITCH);
 var _distance := CameraStats.DEFAULT_DISTANCE;
 var _time_since_yaw_input := INF;
 var _time_since_pitch_input := INF;
+var _yaw_speed := 0.0;                     # Degrees per second from the stick, built up by STICK_ACCELERATION.
+var _pitch_speed := 0.0;
+
+# The pitch's S-curve trip back to its natural height (see _ease_pitch_toward).
+var _pitch_return_active := false;
+var _pitch_return_from := 0.0;
+var _pitch_return_to := 0.0;
+var _pitch_return_time := 0.0;
+var _pitch_return_duration := 0.0;
 var _has_snapped := false;
 
 @onready var _pivot: Node3D = $Pivot;
@@ -70,6 +79,9 @@ func copy_from(other: FollowCamera) -> void:
   _distance = other._distance;
   _time_since_yaw_input = other._time_since_yaw_input;
   _time_since_pitch_input = other._time_since_pitch_input;
+  _yaw_speed = 0.0;
+  _pitch_speed = 0.0;
+  _pitch_return_active = false;
   _has_snapped = true;
   _apply();
 #/copy_from
@@ -83,21 +95,27 @@ func get_yaw() -> float:
 func _update_rotation(delta: float, zone: CameraZone) -> void:
   # A fixed zone owns the camera completely: no steering, no auto turn.
   if zone != null && zone.fixed_angle:
+    _yaw_speed = 0.0;
+    _pitch_speed = 0.0;
+    _pitch_return_active = false;
     var blend := _sharpness_to_weight(CameraStats.ZONE_BLEND_SHARPNESS, delta);
     _yaw = lerp_angle(_yaw, deg_to_rad(zone.yaw_degrees), blend);
     _pitch = lerp_angle(_pitch, deg_to_rad(zone.pitch_degrees), blend);
     return;
   #/if
 
-  var look := _read_look_input(delta);
-  _update_yaw(delta, look.x);
-  _update_pitch(delta, look.y, zone);
+  var stick := _read_stick();
+  var mouse := _read_mouse_degrees();
+  _update_yaw(delta, stick.x, mouse.x);
+  _update_pitch(delta, stick.y, mouse.y, zone);
 #/_update_rotation
 
-# Left / right. Steering holds the angle for MANUAL_HOLD_TIME, then auto turn takes over again.
-func _update_yaw(delta: float, look_degrees: float) -> void:
-  if !is_zero_approx(look_degrees):
-    _yaw -= deg_to_rad(look_degrees);
+# Left / right. The stick has weight: turning speed builds up and winds down, so small taps make small nudges.
+# Steering holds the angle for MANUAL_HOLD_TIME, then auto turn takes over again.
+func _update_yaw(delta: float, stick_x: float, mouse_degrees: float) -> void:
+  _yaw_speed = _accelerate_turn(_yaw_speed, stick_x * CameraStats.STICK_YAW_SPEED, stick_x, delta);
+  if !is_zero_approx(_yaw_speed) || !is_zero_approx(mouse_degrees):
+    _yaw -= deg_to_rad(_yaw_speed * delta + mouse_degrees);
     _time_since_yaw_input = 0.0;
     return;
   #/if
@@ -110,37 +128,73 @@ func _update_yaw(delta: float, look_degrees: float) -> void:
   _yaw -= sideways_speed * CameraStats.AUTO_TURN_RATE * delta;
 #/_update_yaw
 
-# Up / down. As soon as you stop pushing up or down, it eases back to its natural height.
-func _update_pitch(delta: float, look_degrees: float, zone: CameraZone) -> void:
-  if !is_zero_approx(look_degrees):
-    _pitch -= deg_to_rad(look_degrees);
-    _pitch = clampf(_pitch, deg_to_rad(CameraStats.MIN_PITCH), deg_to_rad(CameraStats.MAX_PITCH));
+# Up / down, with the same weight as left / right. Once you stop pushing it, it eases back to its natural height.
+func _update_pitch(delta: float, stick_y: float, mouse_degrees: float, zone: CameraZone) -> void:
+  _pitch_speed = _accelerate_turn(_pitch_speed, stick_y * CameraStats.STICK_PITCH_SPEED, stick_y, delta);
+  if !is_zero_approx(_pitch_speed) || !is_zero_approx(mouse_degrees):
+    var min_pitch := deg_to_rad(CameraStats.MIN_PITCH);
+    var max_pitch := deg_to_rad(CameraStats.MAX_PITCH);
+    _pitch = clampf(_pitch - deg_to_rad(_pitch_speed * delta + mouse_degrees), min_pitch, max_pitch);
+    if is_equal_approx(_pitch, min_pitch) || is_equal_approx(_pitch, max_pitch): _pitch_speed = 0.0;
     _time_since_pitch_input = 0.0;
+    _pitch_return_active = false;
     return;
   #/if
   _time_since_pitch_input += delta;
   if _time_since_pitch_input < CameraStats.PITCH_RETURN_DELAY: return;
 
   var wanted_pitch := deg_to_rad(zone.pitch_degrees if zone != null && zone.override_pitch else CameraStats.DEFAULT_PITCH);
-  _pitch = move_toward(_pitch, wanted_pitch, deg_to_rad(CameraStats.PITCH_RETURN_SPEED) * delta);
+  _ease_pitch_toward(wanted_pitch, delta);
 #/_update_pitch
 
-# Degrees to turn this frame from every player steering this camera: x is left / right, y is up / down.
-func _read_look_input(delta: float) -> Vector2:
+# Moves a turning speed (degrees per second) toward the target: STICK_ACCELERATION while the stick is held,
+# STICK_DECELERATION once it's let go.
+func _accelerate_turn(current_speed: float, target_speed: float, stick_amount: float, delta: float) -> float:
+  var rate := CameraStats.STICK_ACCELERATION if !is_zero_approx(stick_amount) else CameraStats.STICK_DECELERATION;
+  return move_toward(current_speed, target_speed, rate * delta);
+#/_accelerate_turn
+
+# Returns the pitch along an S-curve: starts slowly, speeds up in the middle, settles gently at the end.
+# The trip takes as long as the angle needs at PITCH_RETURN_SPEED on average. A new target restarts the curve.
+func _ease_pitch_toward(wanted_pitch: float, delta: float) -> void:
+  if !_pitch_return_active || !is_equal_approx(wanted_pitch, _pitch_return_to):
+    if is_equal_approx(_pitch, wanted_pitch): return;
+    _pitch_return_active = true;
+    _pitch_return_from = _pitch;
+    _pitch_return_to = wanted_pitch;
+    _pitch_return_time = 0.0;
+    var angle := absf(wanted_pitch - _pitch);
+    _pitch_return_duration = maxf(angle / deg_to_rad(CameraStats.PITCH_RETURN_SPEED), CameraStats.MIN_PITCH_RETURN_TIME);
+  #/if
+
+  _pitch_return_time += delta;
+  var progress := clampf(_pitch_return_time / _pitch_return_duration, 0.0, 1.0);
+  _pitch = lerpf(_pitch_return_from, _pitch_return_to, smoothstep(0.0, 1.0, progress));
+  if progress >= 1.0: _pitch_return_active = false;
+#/_ease_pitch_toward
+
+# Combined right-stick (or arrow key) input from every player steering this camera, -1 to 1 on each axis.
+func _read_stick() -> Vector2:
   var stick := Vector2.ZERO;
+  for player_id in controller_ids:
+    stick += _get_input_buffer(player_id)[Enums.INPUT_BUFFER.LOOK];
+  #/for
+  return stick.limit_length(1.0);
+#/_read_stick
+
+# Mouse look this frame, already in degrees. The mouse turns directly with no added weight, since
+# acceleration on a mouse feels like lag.
+func _read_mouse_degrees() -> Vector2:
   var mouse := Vector2.ZERO;
   for player_id in controller_ids:
-    var buffer: Dictionary = Global.input_manager.p1_input_buffer if player_id == 1 else Global.input_manager.p2_input_buffer;
-    stick += buffer[Enums.INPUT_BUFFER.LOOK];
-    mouse += buffer[Enums.INPUT_BUFFER.LOOK_MOUSE];
+    mouse += _get_input_buffer(player_id)[Enums.INPUT_BUFFER.LOOK_MOUSE];
   #/for
-  stick = stick.limit_length(1.0);
+  return mouse * CameraStats.MOUSE_SENSITIVITY;
+#/_read_mouse_degrees
 
-  return Vector2(
-    stick.x * CameraStats.STICK_YAW_SPEED * delta + mouse.x * CameraStats.MOUSE_SENSITIVITY,
-    stick.y * CameraStats.STICK_PITCH_SPEED * delta + mouse.y * CameraStats.MOUSE_SENSITIVITY
-  );
-#/_read_look_input
+func _get_input_buffer(player_id: int) -> Dictionary:
+  return Global.input_manager.p1_input_buffer if player_id == 1 else Global.input_manager.p2_input_buffer;
+#/_get_input_buffer
 
 func _update_distance(delta: float, zone: CameraZone) -> void:
   var wanted := _get_wanted_distance(zone);
