@@ -1,8 +1,8 @@
 extends Node
 class_name InputManager
 
-@onready var p1_device: Dictionary = Global.device_manager.get_player_device(1);
-@onready var p2_device: Dictionary = Global.device_manager.get_player_device(2);
+# Reads each player's raw input every physics frame and turns it into an input buffer the characters read from.
+# Which device a player uses is DeviceManager's job; this script always asks it fresh, so hot-plugging just works.
 
 enum INPUTS {
   MOVE_UP_KEYBOARD,
@@ -265,6 +265,12 @@ func process_input_buffer(player: int, delta: float) -> void:
 #/process_input_buffer
 
 #region INPUT UTILS
+# P1 always listens to the keyboard as a fallback, even with a controller (design doc: controller first, keyboard fallback).
+# P2 only uses the keyboard if it was explicitly given it.
+func _listens_to_keyboard(player: int, player_device: Dictionary) -> bool:
+  return player == 1 || player_device.type == Enums.INPUT_SOURCES.KEYBOARD;
+#/_listens_to_keyboard
+
 func set_key_action(player: int, action: INPUTS, keycode: Key) -> void:
   var player_input_map = p1_input_map if player == 1 else p2_input_map;
   var event := InputEventKey.new();
@@ -277,7 +283,7 @@ func set_joypad_button_action(player: int, action: INPUTS, button: JoyButton) ->
   var player_input_map = p1_input_map if player == 1 else p2_input_map;
   var event := InputEventJoypadButton.new();
   event.button_index = button;
-  event.device = p1_device.device_id if player == 1 else p2_device.device_id;
+  event.device = Global.device_manager.get_player_device(player).device_id;
 
   player_input_map[action] = event;
 #/set_joypad_button_action
@@ -287,7 +293,7 @@ func set_joypad_axis_action(player: int, action: INPUTS, axis: JoyAxis, axis_val
   var event := InputEventJoypadMotion.new();
   event.axis = axis;
   event.axis_value = axis_value;
-  event.device = p1_device.device_id if player == 1 else p2_device.device_id;
+  event.device = Global.device_manager.get_player_device(player).device_id;
 
   player_input_map[action] = event;
 #/set_joypad_axis_action
@@ -298,7 +304,7 @@ func clear_action(player: int, action: INPUTS) -> void:
 #/clear_action
 
 func is_action_pressed(player: int, action: INPUTS) -> bool:
-  var player_device = p1_device if player == 1 else p2_device;
+  var player_device := Global.device_manager.get_player_device(player);
   var player_input_map = p1_input_map if player == 1 else p2_input_map;
 
   if !player_input_map.has(action) || player_input_map[action] == null:
@@ -307,7 +313,7 @@ func is_action_pressed(player: int, action: INPUTS) -> bool:
 
   var event = player_input_map[action];
 
-  if event is InputEventKey && player_device.type == Enums.INPUT_SOURCES.KEYBOARD:
+  if event is InputEventKey && _listens_to_keyboard(player, player_device):
     return Input.is_key_pressed(event.keycode);
   elif event is InputEventJoypadButton && player_device.type == Enums.INPUT_SOURCES.CONTROLLER:
     return Input.is_joy_button_pressed(player_device.device_id, event.button_index);
@@ -320,7 +326,7 @@ func is_action_pressed(player: int, action: INPUTS) -> bool:
 #/is_action_pressed
 
 func get_axis(player: int, negative_action: INPUTS, positive_action: INPUTS) -> float:
-  var player_device = p1_device if player == 1 else p2_device;
+  var player_device := Global.device_manager.get_player_device(player);
   var player_input_map = p1_input_map if player == 1 else p2_input_map;
 
   if !player_input_map.has(negative_action) || !player_input_map.has(positive_action):
@@ -333,7 +339,7 @@ func get_axis(player: int, negative_action: INPUTS, positive_action: INPUTS) -> 
   var neg_value = 0.0;
   var pos_value = 0.0;
 
-  if neg_event is InputEventKey && player_device.type == Enums.INPUT_SOURCES.KEYBOARD:
+  if neg_event is InputEventKey && _listens_to_keyboard(player, player_device):
     neg_value = -1.0 if Input.is_key_pressed(neg_event.keycode) else 0.0;
   elif neg_event is InputEventJoypadButton && player_device.type == Enums.INPUT_SOURCES.CONTROLLER:
     neg_value =  -1.0 if Input.is_joy_button_pressed(player_device.device_id, neg_event.button_index) else 0.0;
@@ -342,7 +348,7 @@ func get_axis(player: int, negative_action: INPUTS, positive_action: INPUTS) -> 
     neg_value = axis_val if sign(axis_val) == sign(neg_event.axis_value) && abs(axis_val) >= Settings.stick_deadzone else 0.0;
   #/if
 
-  if pos_event is InputEventKey && player_device.type == Enums.INPUT_SOURCES.KEYBOARD:
+  if pos_event is InputEventKey && _listens_to_keyboard(player, player_device):
     pos_value = 1.0 if Input.is_key_pressed(pos_event.keycode) else 0.0;
   elif pos_event is InputEventJoypadButton && player_device.type == Enums.INPUT_SOURCES.CONTROLLER:
     pos_value =  1.0 if Input.is_joy_button_pressed(player_device.device_id, pos_event.button_index) else 0.0;

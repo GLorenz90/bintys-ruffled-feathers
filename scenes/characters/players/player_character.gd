@@ -11,6 +11,12 @@ const SHAPE_NORMAL: CapsuleShape3D = preload("res://resources/shapes/player_shap
 const SHAPE_ROLL: CapsuleShape3D = preload("res://resources/shapes/player_shape_roll.tres");
 const BODY_NORMAL: CapsuleMesh = preload("res://resources/meshes/test_body.tres");
 const BODY_ROLL: CapsuleMesh = preload("res://resources/meshes/test_body_short.tres");
+
+# Placeholder looks until real models exist. Same moves, different colour.
+const PLACEHOLDER_COLORS := {
+  Enums.CHARACTERS.BINTY: Color(1.0, 0.85, 0.1),
+  Enums.CHARACTERS.GLINTY: Color(0.25, 0.75, 0.3),
+};
 var _swing_attack_1: PackedScene = preload("res://scenes/attacks/swing_attack_1.tscn");
 var _swing_attack_2: PackedScene = preload("res://scenes/attacks/swing_attack_2.tscn");
 
@@ -47,6 +53,7 @@ func _ready() -> void:
     Global.p1_char = self;
   else:
     Global.p2_char = self;
+  _apply_placeholder_look();
   _return_to_neutral_state();
 
   Signals.end_interaction.connect(_end_interact);
@@ -129,6 +136,12 @@ func _process_movement(delta: float) -> void:
     _face(_move_dir());
   #/if
 #/_process_movement
+
+func _apply_placeholder_look() -> void:
+  var material := StandardMaterial3D.new();
+  material.albedo_color = PLACEHOLDER_COLORS.get(char_type, Color.WHITE);
+  $Model/Body.material_override = material;
+#/_apply_placeholder_look
 
 func _face(dir: Vector3) -> void:
   look_at(global_position + dir, Vector3.UP);
@@ -292,4 +305,7 @@ func _end_interact() -> void:
 #endregion =========================================================================================
 
 #region PUBLIC FUNCTIONS ===========================================================================
+func get_state_name() -> String:
+  return Enums.CHAR_STATES.keys()[_action];
+#/get_state_name
 #endregion =========================================================================================
