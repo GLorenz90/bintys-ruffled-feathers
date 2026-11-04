@@ -29,7 +29,7 @@ const SWING_ATTACKS: Array[PackedScene] = [
 const TERRAIN_LAYER_MASK := 1; # Physics layer 1 is "terrain" (see Project Settings > Layer Names).
 
 # Placeholder looks until real models exist. Same moves, different colour.
-const PLACEHOLDER_COLORS := {
+var PLACEHOLDER_COLORS := {
   Enums.CHARACTERS.BINTY: Color(1.0, 0.85, 0.1),
   Enums.CHARACTERS.GLINTY: Color(0.25, 0.75, 0.3),
 };
@@ -119,7 +119,7 @@ func _physics_process(delta: float) -> void:
 func change_state(next: Enums.PLAYER_STATES) -> void:
   if _current_state != null && next == state: return;
 
-  var previous := state;
+  var previous: Enums.PLAYER_STATES = state;
   if _current_state != null: _current_state.exit(next);
 
   state = next;
