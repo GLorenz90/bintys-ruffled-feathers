@@ -4,9 +4,10 @@
 [ext_resource type="Script" uid="uid://cob7iwpnf3bsm" path="res://scenes/device_manager.gd" id="2_sugp2"]
 [ext_resource type="Script" uid="uid://dhaq5k2cyv6ak" path="res://scenes/input_manager.gd" id="3_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://dffslabmmykrs" path="res://scenes/ui/test_hud.tscn" id="8_85g3d"]
-[ext_resource type="Script" uid="uid://ctttiljqi026s" path="res://scenes/main_camera.gd" id="8_tipki"]
 [ext_resource type="PackedScene" path="res://scenes/levels/gym.tscn" id="9_gym"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="10_debug"]
+[ext_resource type="Script" path="res://scenes/camera/camera_director.gd" id="11_director"]
+[ext_resource type="PackedScene" path="res://scenes/camera/follow_camera.tscn" id="12_follow"]
 
 [node name="Main" type="Node3D" unique_id=1846159950]
 script = ExtResource("1_o5qli")
@@ -17,6 +18,14 @@ script = ExtResource("2_sugp2")
 
 [node name="InputManager" type="Node" parent="." unique_id=645131560]
 script = ExtResource("3_jyhfs")
+
+[node name="CameraDirector" type="Node" parent="." node_paths=PackedStringArray("left_view", "right_view", "left_camera", "right_camera", "divider")]
+script = ExtResource("11_director")
+left_view = NodePath("../SubViewportContainer")
+right_view = NodePath("../RightViewContainer")
+left_camera = NodePath("../SubViewportContainer/SubViewport/LeftCamera")
+right_camera = NodePath("../RightViewContainer/SubViewport/RightCamera")
+divider = NodePath("../Hud/SplitDivider")
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=1396740323]
 anchors_preset = 15
@@ -34,21 +43,46 @@ render_target_update_mode = 4
 
 [node name="Scene" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=2110969181]
 
-[node name="UiLayer" type="Control" parent="SubViewportContainer/SubViewport" unique_id=1815324038]
+[node name="LeftCamera" parent="SubViewportContainer/SubViewport" instance=ExtResource("12_follow")]
+
+[node name="RightViewContainer" type="SubViewportContainer" parent="."]
+visible = false
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="RightViewContainer"]
+handle_input_locally = false
+msaa_3d = 2
+size = Vector2i(960, 1080)
+render_target_update_mode = 0
+
+[node name="RightCamera" parent="RightViewContainer/SubViewport" instance=ExtResource("12_follow")]
+
+[node name="Hud" type="CanvasLayer" parent="."]
+
+[node name="UiLayer" type="Control" parent="Hud" unique_id=1815324038]
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 73.0
 grow_horizontal = 2
 
-[node name="Test Hud" parent="SubViewportContainer/SubViewport/UiLayer" unique_id=1170973187 instance=ExtResource("8_85g3d")]
+[node name="Test Hud" parent="Hud/UiLayer" unique_id=1170973187 instance=ExtResource("8_85g3d")]
 layout_mode = 1
 
-[node name="CameraTarget" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=603279220]
-script = ExtResource("8_tipki")
-
-[node name="Camera" type="Camera3D" parent="SubViewportContainer/SubViewport/CameraTarget" unique_id=542631257]
-transform = Transform3D(1, 0, 0, 0, 0.67760897, 0.7354224, 0, -0.7354224, 0.67760897, 9.536743e-07, 10.228623, 6.2990623)
-size = 11.863505
+[node name="SplitDivider" type="ColorRect" parent="Hud"]
+visible = false
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -3.0
+offset_right = 3.0
+color = Color(0.05, 0.05, 0.08, 1)
 
 [node name="DebugOverlay" parent="." unique_id=1381828584 instance=ExtResource("10_debug")]

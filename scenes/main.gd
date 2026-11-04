@@ -12,6 +12,7 @@ const P2_SPAWN_NAME := "P2Spawn";
 @export var start_level: PackedScene;
 
 @onready var viewport: SubViewport = $SubViewportContainer/SubViewport;
+@onready var right_viewport: SubViewport = $RightViewContainer/SubViewport;
 @onready var level_parent: Node3D = $SubViewportContainer/SubViewport/Scene;
 
 #region BUILT IN ===================================================================================
@@ -20,8 +21,7 @@ func _init() -> void:
 #/_init
 
 func _ready() -> void:
-  Global.camera = $SubViewportContainer/SubViewport/CameraTarget/Camera;
-  Global.ui_layer = $SubViewportContainer/SubViewport/UiLayer;
+  Global.ui_layer = $Hud/UiLayer;
   Settings.update_visual_settings();
 
   if start_level != null: load_level(start_level);
@@ -29,6 +29,11 @@ func _ready() -> void:
 #endregion =========================================================================================
 
 #region PUBLIC =====================================================================================
+# Both views the world is drawn into (the right one is only shown in split screen).
+func get_game_viewports() -> Array[SubViewport]:
+  return [viewport, right_viewport];
+#/get_game_viewports
+
 func load_level(level_scene: PackedScene) -> void:
   if Global.current_level != null:
     level_parent.remove_child(Global.current_level);

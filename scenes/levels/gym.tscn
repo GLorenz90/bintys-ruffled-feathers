@@ -6,6 +6,8 @@
 
 [ext_resource type="PackedScene" uid="uid://bjo8m3kj1x3r2" path="res://scenes/items/pickups/large_silver.tscn" id="6_tipki"]
 
+[ext_resource type="Script" path="res://scenes/camera/camera_zone.gd" id="7_zone"]
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tipki"]
 sky_top_color = Color(0.20552272, 0.43556347, 0.8057423, 1)
 sky_horizon_color = Color(0.43361023, 0.5078178, 0.68277293, 1)
@@ -31,6 +33,27 @@ size = Vector3(20, 0.5, 20)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ra2i3"]
 size = Vector3(20, 0.5, 20)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wall"]
+albedo_color = Color(0.55, 0.52, 0.5, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+material = SubResource("Mat_wall")
+size = Vector3(12, 4, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape_wall"]
+size = Vector3(12, 4, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape_zone"]
+size = Vector3(8, 6, 8)
+
+[sub_resource type="StandardMaterial3D" id="Mat_zone"]
+transparency = 1
+albedo_color = Color(0.2, 0.5, 1, 0.35)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_zone"]
+material = SubResource("Mat_zone")
+size = Vector2(8, 8)
 
 [node name="Gym" type="Node3D"]
 
@@ -97,3 +120,31 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, 3)
 
 [node name="P2Spawn" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 3)
+
+[node name="CameraTestWall" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 9)
+collision_mask = 0
+
+[node name="Shape" type="MeshInstance3D" parent="CameraTestWall"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="Collision" type="CollisionShape3D" parent="CameraTestWall"]
+shape = SubResource("BoxShape_wall")
+
+[node name="SideOnCameraZone" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, -10)
+script = ExtResource("7_zone")
+fixed_angle = true
+yaw_degrees = 90.0
+override_pitch = true
+pitch_degrees = -8.0
+override_distance = true
+distance = 12.0
+
+[node name="Collision" type="CollisionShape3D" parent="SideOnCameraZone"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+shape = SubResource("BoxShape_zone")
+
+[node name="FloorMarker" type="MeshInstance3D" parent="SideOnCameraZone"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("PlaneMesh_zone")

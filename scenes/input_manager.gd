@@ -16,6 +16,10 @@ enum INPUTS {
   USE_ITEM_KEYBOARD,
   NEXT_ITEM_KEYBOARD,
   PREV_ITEM_KEYBOARD,
+  LOOK_UP_KEYBOARD,
+  LOOK_DOWN_KEYBOARD,
+  LOOK_LEFT_KEYBOARD,
+  LOOK_RIGHT_KEYBOARD,
 
   MOVE_UP_GAMEPAD,
   MOVE_DOWN_GAMEPAD,
@@ -27,7 +31,11 @@ enum INPUTS {
   INTERACT_GAMEPAD,
   USE_ITEM_GAMEPAD,
   NEXT_ITEM_GAMEPAD,
-  PREV_ITEM_GAMEPAD
+  PREV_ITEM_GAMEPAD,
+  LOOK_UP_GAMEPAD,
+  LOOK_DOWN_GAMEPAD,
+  LOOK_LEFT_GAMEPAD,
+  LOOK_RIGHT_GAMEPAD
 }
 
 enum ACTIONS {
@@ -38,7 +46,8 @@ enum ACTIONS {
   INTERACT,
   USE_ITEM,
   NEXT_ITEM,
-  PREV_ITEM
+  PREV_ITEM,
+  LOOK
 }
 
 var template_input_map: Dictionary[INPUTS, InputEvent] = {
@@ -53,6 +62,10 @@ var template_input_map: Dictionary[INPUTS, InputEvent] = {
   INPUTS.USE_ITEM_KEYBOARD: null,
   INPUTS.NEXT_ITEM_KEYBOARD: null,
   INPUTS.PREV_ITEM_KEYBOARD: null,
+  INPUTS.LOOK_UP_KEYBOARD: null,
+  INPUTS.LOOK_DOWN_KEYBOARD: null,
+  INPUTS.LOOK_LEFT_KEYBOARD: null,
+  INPUTS.LOOK_RIGHT_KEYBOARD: null,
 
   INPUTS.MOVE_UP_GAMEPAD: null,
   INPUTS.MOVE_DOWN_GAMEPAD: null,
@@ -64,7 +77,11 @@ var template_input_map: Dictionary[INPUTS, InputEvent] = {
   INPUTS.INTERACT_GAMEPAD: null,
   INPUTS.USE_ITEM_GAMEPAD: null,
   INPUTS.NEXT_ITEM_GAMEPAD: null,
-  INPUTS.PREV_ITEM_GAMEPAD: null
+  INPUTS.PREV_ITEM_GAMEPAD: null,
+  INPUTS.LOOK_UP_GAMEPAD: null,
+  INPUTS.LOOK_DOWN_GAMEPAD: null,
+  INPUTS.LOOK_LEFT_GAMEPAD: null,
+  INPUTS.LOOK_RIGHT_GAMEPAD: null
 };
 
 # Raw data used to calculate the current state
@@ -76,7 +93,8 @@ var template_action_states: Dictionary = {
   ACTIONS.INTERACT: false,
   ACTIONS.USE_ITEM: false,
   ACTIONS.NEXT_ITEM: false,
-  ACTIONS.PREV_ITEM: false
+  ACTIONS.PREV_ITEM: false,
+  ACTIONS.LOOK: Vector2(0.0, 0.0)
 };
 
 # Buffer that is used in actual scripts
@@ -109,8 +127,14 @@ var template_input_buffer: Dictionary = {
 
   Enums.INPUT_BUFFER.PREV_ITEM_PRESSED: false,
   Enums.INPUT_BUFFER.PREV_ITEM_HELD: false,
-  Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME: 0.0
+  Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME: 0.0,
+
+  Enums.INPUT_BUFFER.LOOK: Vector2(0.0, 0.0),
+  Enums.INPUT_BUFFER.LOOK_MOUSE: Vector2(0.0, 0.0)
 };
+
+# Mouse look (P1 only): movement while the right mouse button is held, added up between physics frames.
+var _p1_mouse_delta := Vector2.ZERO;
 
 var p1_input_map := template_input_map.duplicate();
 var p1_cur_action_state = template_action_states.duplicate();
@@ -129,6 +153,12 @@ func _ready() -> void:
   Global.input_manager = self;
   setup_default_controls();
 #/_ready
+
+func _input(event: InputEvent) -> void:
+  if event is InputEventMouseMotion && Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+    _p1_mouse_delta += event.relative;
+  #/if
+#/_input
 
 func _physics_process(delta) -> void:
   process_action_state(1);
@@ -151,6 +181,10 @@ func setup_default_controls() -> void:
   set_key_action(1, INPUTS.USE_ITEM_KEYBOARD, KEY_F);
   set_key_action(1, INPUTS.NEXT_ITEM_KEYBOARD, KEY_C);
   set_key_action(1, INPUTS.PREV_ITEM_KEYBOARD, KEY_Z);
+  set_key_action(1, INPUTS.LOOK_UP_KEYBOARD, KEY_UP);
+  set_key_action(1, INPUTS.LOOK_DOWN_KEYBOARD, KEY_DOWN);
+  set_key_action(1, INPUTS.LOOK_LEFT_KEYBOARD, KEY_LEFT);
+  set_key_action(1, INPUTS.LOOK_RIGHT_KEYBOARD, KEY_RIGHT);
 
   # Player 1 Gamepad
   set_joypad_axis_action(1, INPUTS.MOVE_UP_GAMEPAD, JOY_AXIS_LEFT_Y, -1);
@@ -164,6 +198,10 @@ func setup_default_controls() -> void:
   set_joypad_button_action(1, INPUTS.USE_ITEM_GAMEPAD, JOY_BUTTON_Y);
   set_joypad_button_action(1, INPUTS.NEXT_ITEM_GAMEPAD, JOY_BUTTON_RIGHT_SHOULDER);
   set_joypad_button_action(1, INPUTS.PREV_ITEM_GAMEPAD, JOY_BUTTON_LEFT_SHOULDER);
+  set_joypad_axis_action(1, INPUTS.LOOK_UP_GAMEPAD, JOY_AXIS_RIGHT_Y, -1);
+  set_joypad_axis_action(1, INPUTS.LOOK_DOWN_GAMEPAD, JOY_AXIS_RIGHT_Y, 1);
+  set_joypad_axis_action(1, INPUTS.LOOK_LEFT_GAMEPAD, JOY_AXIS_RIGHT_X, -1);
+  set_joypad_axis_action(1, INPUTS.LOOK_RIGHT_GAMEPAD, JOY_AXIS_RIGHT_X, 1);
 
   # Player 2 Keyboard
   set_key_action(2, INPUTS.MOVE_UP_KEYBOARD, KEY_W);
@@ -177,6 +215,10 @@ func setup_default_controls() -> void:
   set_key_action(2, INPUTS.USE_ITEM_KEYBOARD, KEY_F);
   set_key_action(2, INPUTS.NEXT_ITEM_KEYBOARD, KEY_C);
   set_key_action(2, INPUTS.PREV_ITEM_KEYBOARD, KEY_Z);
+  set_key_action(2, INPUTS.LOOK_UP_KEYBOARD, KEY_UP);
+  set_key_action(2, INPUTS.LOOK_DOWN_KEYBOARD, KEY_DOWN);
+  set_key_action(2, INPUTS.LOOK_LEFT_KEYBOARD, KEY_LEFT);
+  set_key_action(2, INPUTS.LOOK_RIGHT_KEYBOARD, KEY_RIGHT);
 
   # Player 2 Gamepad
   set_joypad_axis_action(2, INPUTS.MOVE_UP_GAMEPAD, JOY_AXIS_LEFT_Y, -1);
@@ -190,6 +232,10 @@ func setup_default_controls() -> void:
   set_joypad_button_action(2, INPUTS.USE_ITEM_GAMEPAD, JOY_BUTTON_Y);
   set_joypad_button_action(2, INPUTS.NEXT_ITEM_GAMEPAD, JOY_BUTTON_RIGHT_SHOULDER);
   set_joypad_button_action(2, INPUTS.PREV_ITEM_GAMEPAD, JOY_BUTTON_LEFT_SHOULDER);
+  set_joypad_axis_action(2, INPUTS.LOOK_UP_GAMEPAD, JOY_AXIS_RIGHT_Y, -1);
+  set_joypad_axis_action(2, INPUTS.LOOK_DOWN_GAMEPAD, JOY_AXIS_RIGHT_Y, 1);
+  set_joypad_axis_action(2, INPUTS.LOOK_LEFT_GAMEPAD, JOY_AXIS_RIGHT_X, -1);
+  set_joypad_axis_action(2, INPUTS.LOOK_RIGHT_GAMEPAD, JOY_AXIS_RIGHT_X, 1);
 #/setup_default_controls
 
 func process_action_state(player: int) -> void:
@@ -202,6 +248,10 @@ func process_action_state(player: int) -> void:
   var movement_x = clampf(get_axis(player, INPUTS.MOVE_LEFT_KEYBOARD, INPUTS.MOVE_RIGHT_KEYBOARD) + get_axis(player, INPUTS.MOVE_LEFT_GAMEPAD, INPUTS.MOVE_RIGHT_GAMEPAD), -1.0, 1.0);
   var movement_y = clampf(get_axis(player, INPUTS.MOVE_UP_KEYBOARD, INPUTS.MOVE_DOWN_KEYBOARD) + get_axis(player, INPUTS.MOVE_UP_GAMEPAD, INPUTS.MOVE_DOWN_GAMEPAD), -1.0, 1.0);
   player_cur_action_state[ACTIONS.MOVE] = Vector2(movement_x, movement_y);
+
+  var look_x = clampf(get_axis(player, INPUTS.LOOK_LEFT_KEYBOARD, INPUTS.LOOK_RIGHT_KEYBOARD) + get_axis(player, INPUTS.LOOK_LEFT_GAMEPAD, INPUTS.LOOK_RIGHT_GAMEPAD), -1.0, 1.0);
+  var look_y = clampf(get_axis(player, INPUTS.LOOK_UP_KEYBOARD, INPUTS.LOOK_DOWN_KEYBOARD) + get_axis(player, INPUTS.LOOK_UP_GAMEPAD, INPUTS.LOOK_DOWN_GAMEPAD), -1.0, 1.0);
+  player_cur_action_state[ACTIONS.LOOK] = Vector2(look_x, look_y);
 
   var attack_pressed = is_action_pressed(player, INPUTS.ATTACK_KEYBOARD) || is_action_pressed(player, INPUTS.ATTACK_GAMEPAD);
   var jump_pressed = is_action_pressed(player, INPUTS.JUMP_KEYBOARD) || is_action_pressed(player, INPUTS.JUMP_GAMEPAD);
@@ -255,8 +305,11 @@ func process_input_buffer(player: int, delta: float) -> void:
     Enums.INPUT_BUFFER.NEXT_ITEM_HELD_TIME: (prev_player_input_buffer[Enums.INPUT_BUFFER.NEXT_ITEM_HELD_TIME] + delta) if player_cur_action_state[ACTIONS.NEXT_ITEM] else 0.0,
     Enums.INPUT_BUFFER.PREV_ITEM_PRESSED: player_just_pressed_action_state[ACTIONS.PREV_ITEM],
     Enums.INPUT_BUFFER.PREV_ITEM_HELD: player_cur_action_state[ACTIONS.PREV_ITEM],
-    Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME: (prev_player_input_buffer[Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME] + delta) if player_cur_action_state[ACTIONS.PREV_ITEM] else 0.0
+    Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME: (prev_player_input_buffer[Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME] + delta) if player_cur_action_state[ACTIONS.PREV_ITEM] else 0.0,
+    Enums.INPUT_BUFFER.LOOK: player_cur_action_state[ACTIONS.LOOK],
+    Enums.INPUT_BUFFER.LOOK_MOUSE: _p1_mouse_delta if player == 1 else Vector2.ZERO
   };
+  if player == 1: _p1_mouse_delta = Vector2.ZERO;
 
   if(player == 1):
     p1_input_buffer = player_input_buffer;

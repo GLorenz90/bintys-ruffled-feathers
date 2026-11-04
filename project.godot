@@ -26,6 +26,7 @@ Enums="*uid://ccng6rcdheqvl"
 Global="*uid://b5x0ot2nkg52i"
 Settings="*uid://bj3pycrmrie13"
 Signals="*uid://bgf2xcyny2m05"
+CameraStats="*res://singletons/camera_stats.gd"
 
 [display]
 

@@ -79,6 +79,7 @@ var time_since_grounded := 0.0;   # For coyote time.
 var can_flap := true;              # One flap per time in the air. Reset on landing.
 var carried_speed := 0.0;          # Roll speed kept through a roll-jump until landing. 0 = none.
 var attack_index := 0;             # Which swing in the combo comes next.
+var _camera_zones: Array[CameraZone] = []; # Zones we're standing in. The most recently entered one wins.
 #endregion =========================================================================================
 
 #region BUILT IN ===================================================================================
@@ -131,6 +132,10 @@ func change_state(next: Enums.PLAYER_STATES) -> void:
   state_changed.emit(previous, next);
 #/change_state
 
+func get_player_id() -> int:
+  return 1 if is_p1 else 2;
+#/get_player_id
+
 func get_state_name() -> String:
   return Enums.PLAYER_STATES.keys()[state];
 #/get_state_name
@@ -160,10 +165,11 @@ func return_to_neutral() -> void:
 #endregion =========================================================================================
 
 #region MOVEMENT HELPERS ===========================================================================
-# Stick direction in world space, relative to the camera. Length 0 to 1, so half-tilt means half speed.
+# Stick direction in world space, relative to this player's camera. Length 0 to 1, so half-tilt means half speed.
 func get_move_direction() -> Vector3:
   var direction := Vector3(move_input.x, 0.0, move_input.y);
-  if Global.camera != null: direction = direction.rotated(Vector3.UP, Global.camera.global_rotation.y);
+  var camera := Global.get_camera_for_player(get_player_id());
+  if camera != null: direction = direction.rotated(Vector3.UP, camera.global_rotation.y);
   return direction.limit_length(1.0);
 #/get_move_direction
 
@@ -240,6 +246,18 @@ func set_roll_shape(is_rolling: bool) -> void:
   $Model/Body.mesh = BODY_ROLL if is_rolling else BODY_NORMAL;
   $Model/Body.position.y = $Collision.position.y;
 #/set_roll_shape
+
+func enter_camera_zone(zone: CameraZone) -> void:
+  if !_camera_zones.has(zone): _camera_zones.append(zone);
+#/enter_camera_zone
+
+func exit_camera_zone(zone: CameraZone) -> void:
+  _camera_zones.erase(zone);
+#/exit_camera_zone
+
+func get_camera_zone() -> CameraZone:
+  return null if _camera_zones.is_empty() else _camera_zones.back();
+#/get_camera_zone
 
 func spawn_swing(index: int) -> void:
   _spawn_attack(SWING_ATTACKS[index % SWING_ATTACKS.size()], CharStats.ATTACK_TIME);

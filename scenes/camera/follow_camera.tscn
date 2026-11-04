@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/camera/follow_camera.gd" id="1_follow"]
+
+[node name="FollowCamera" type="Node3D"]
+script = ExtResource("1_follow")
+
+[node name="Pivot" type="Node3D" parent="."]
+
+[node name="Arm" type="SpringArm3D" parent="Pivot"]
+spring_length = 9.0
+
+[node name="Camera" type="Camera3D" parent="Pivot/Arm"]
+current = true
+fov = 70.0

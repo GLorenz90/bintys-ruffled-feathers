@@ -78,7 +78,7 @@ func update_audio_buses() -> void:
 func update_visual_settings() -> void:
   # Main isn't around until the game scene loads; Main calls this itself once it's ready.
   if Global.main == null: return;
-  Global.main.viewport.msaa_3d = antialiasing;
+  for game_viewport in Global.main.get_game_viewports(): game_viewport.msaa_3d = antialiasing;
 #/update_visual_settings
 
 func _set_bus_volume(bus_name: String, ratio: float) -> void:

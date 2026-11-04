@@ -21,6 +21,7 @@ func _process(_delta: float) -> void:
   if !visible: return;
 
   var lines: PackedStringArray = ["FPS: %d" % Engine.get_frames_per_second()];
+  if Global.camera_director != null: lines.append("Camera: %s" % Global.camera_director.get_mode_name());
   for player_id in [1, 2]:
     lines.append("");
     lines.append_array(_player_lines(player_id));
