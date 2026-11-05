@@ -9,7 +9,7 @@ class_name FollowCamera
 #         Camera
 #
 # By default it follows on its own: it trails the players and drifts round behind them when they run sideways.
-# Players can steer it with the right stick (or arrows / right-mouse drag for P1). Left / right steering is
+# Players can steer it with the right stick (or arrows / right-mouse drag for whoever has the keyboard). Left / right steering is
 # held for MANUAL_HOLD_TIME, then it goes back to following on its own. Up / down eases back to its natural
 # height as soon as you let go. Inside a fixed CameraZone the zone owns the camera and steering is ignored.
 # All numbers live in CameraStats.

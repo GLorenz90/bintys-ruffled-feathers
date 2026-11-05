@@ -5,8 +5,8 @@ class_name Main
 # and swaps levels in and out under the SubViewport's Scene node.
 # Players live beside the level (not inside it), so they survive level changes.
 #
-# Binty (P1) is always there. Glinty (P2) drops in once a second device is assigned to them
-# (plug in a second controller), or with F4 from the debug overlay for testing.
+# Binty (P1) is always there. Glinty (P2) drops in once a device is assigned to them: the keyboard
+# when Binty is on a controller, or a second controller. F4 in the debug overlay also drops her in for testing.
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/characters/players/player_character.tscn");
 const P1_SPAWN_NAME := "P1Spawn";

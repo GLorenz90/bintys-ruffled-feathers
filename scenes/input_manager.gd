@@ -133,8 +133,9 @@ var template_input_buffer: Dictionary = {
   Enums.INPUT_BUFFER.LOOK_MOUSE: Vector2(0.0, 0.0)
 };
 
-# Mouse look (P1 only): movement while the right mouse button is held, added up between physics frames.
-var _p1_mouse_delta := Vector2.ZERO;
+# Mouse look, for whoever has the keyboard: movement while the right mouse button is held,
+# added up between physics frames.
+var _mouse_delta := Vector2.ZERO;
 
 var p1_input_map := template_input_map.duplicate();
 var p1_cur_action_state = template_action_states.duplicate();
@@ -156,7 +157,7 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
   if event is InputEventMouseMotion && Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
-    _p1_mouse_delta += event.relative;
+    _mouse_delta += event.relative;
   #/if
 #/_input
 
@@ -307,9 +308,9 @@ func process_input_buffer(player: int, delta: float) -> void:
     Enums.INPUT_BUFFER.PREV_ITEM_HELD: player_cur_action_state[ACTIONS.PREV_ITEM],
     Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME: (prev_player_input_buffer[Enums.INPUT_BUFFER.PREV_ITEM_HELD_TIME] + delta) if player_cur_action_state[ACTIONS.PREV_ITEM] else 0.0,
     Enums.INPUT_BUFFER.LOOK: player_cur_action_state[ACTIONS.LOOK],
-    Enums.INPUT_BUFFER.LOOK_MOUSE: _p1_mouse_delta if player == 1 else Vector2.ZERO
+    Enums.INPUT_BUFFER.LOOK_MOUSE: _mouse_delta if _has_keyboard(player) else Vector2.ZERO
   };
-  if player == 1: _p1_mouse_delta = Vector2.ZERO;
+  if _has_keyboard(player): _mouse_delta = Vector2.ZERO;
 
   if(player == 1):
     p1_input_buffer = player_input_buffer;
@@ -318,11 +319,14 @@ func process_input_buffer(player: int, delta: float) -> void:
 #/process_input_buffer
 
 #region INPUT UTILS
-# P1 always listens to the keyboard as a fallback, even with a controller (design doc: controller first, keyboard fallback).
-# P2 only uses the keyboard if it was explicitly given it.
-func _listens_to_keyboard(player: int, player_device: Dictionary) -> bool:
-  return player == 1 || player_device.type == Enums.INPUT_SOURCES.KEYBOARD;
+# Only the player DeviceManager gave the keyboard to reads it (see DeviceManager for who gets it).
+func _listens_to_keyboard(_player: int, player_device: Dictionary) -> bool:
+  return player_device.type == Enums.INPUT_SOURCES.KEYBOARD;
 #/_listens_to_keyboard
+
+func _has_keyboard(player: int) -> bool:
+  return Global.device_manager.get_player_device(player).type == Enums.INPUT_SOURCES.KEYBOARD;
+#/_has_keyboard
 
 func set_key_action(player: int, action: INPUTS, keycode: Key) -> void:
   var player_input_map = p1_input_map if player == 1 else p2_input_map;

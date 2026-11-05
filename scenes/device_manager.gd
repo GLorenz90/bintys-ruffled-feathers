@@ -2,8 +2,10 @@ extends Node
 class_name DeviceManager
 
 # Decides which device each player is using.
-# Controllers are handed out in the order they're connected: the first goes to P1, the second to P2.
-# With no controller, P1 falls back to the keyboard. (InputManager also lets P1 use the keyboard at any time.)
+#   - Controllers are handed out in the order they're connected: the first goes to P1, the second to P2.
+#   - The keyboard (and mouse) goes to P1 if P1 has no controller.
+#   - Otherwise it goes to P2 if P2 has no controller, which makes Glinty join.
+# Whenever a controller connects or disconnects, the keyboard is re-checked with those rules.
 
 var UNASSIGNED_DEVICE := {"type": Enums.INPUT_SOURCES.UNASSIGNED, "device_id": -1};
 
@@ -64,15 +66,30 @@ func _assign_connected_controllers() -> void:
   var joypads := Input.get_connected_joypads();
   for player_id in player_devices:
     var index: int = player_id - 1;
-    if index < joypads.size():
-      _set_player_device(player_id, Enums.INPUT_SOURCES.CONTROLLER, joypads[index]);
-    elif player_id == 1:
-      _set_player_device(player_id, Enums.INPUT_SOURCES.KEYBOARD, -1);
-    #/if
+    if index < joypads.size(): _set_player_device(player_id, Enums.INPUT_SOURCES.CONTROLLER, joypads[index]);
   #/for
+  _give_out_keyboard();
 #/_assign_connected_controllers
 
+# The keyboard goes to P1 if they have no controller, otherwise to P2 if they have none.
+func _give_out_keyboard() -> void:
+  var p1_has_controller := _has_controller(1);
+  var p2_has_controller := _has_controller(2);
+  if !p1_has_controller:
+    if get_player_device(2).type == Enums.INPUT_SOURCES.KEYBOARD: unassign_player(2);
+    _set_player_device(1, Enums.INPUT_SOURCES.KEYBOARD, -1);
+  elif !p2_has_controller:
+    _set_player_device(2, Enums.INPUT_SOURCES.KEYBOARD, -1);
+  #/if
+#/_give_out_keyboard
+
+func _has_controller(player_id: int) -> bool:
+  return get_player_device(player_id).type == Enums.INPUT_SOURCES.CONTROLLER;
+#/_has_controller
+
 func _set_player_device(player_id: int, type: Enums.INPUT_SOURCES, device_id: int) -> void:
+  var current := get_player_device(player_id);
+  if current.type == type && current.device_id == device_id: return; # No change.
   player_devices[player_id] = {"type": type, "device_id": device_id};
   Signals.player_device_assigned.emit(player_id, type, device_id);
   print("Player %d assigned: %s" % [player_id, get_device_label(player_id)]);
@@ -96,12 +113,10 @@ func _get_device_info(event: InputEvent) -> Dictionary:
   return UNASSIGNED_DEVICE.duplicate();
 #/_get_device_info
 
-# A newly connected controller goes to the first player without one.
-# P1 on the keyboard counts as "without one", so plugging in a pad upgrades P1 from keyboard to controller.
+# A newly connected controller goes to the first player without one (a keyboard player counts as "without one").
 func _give_controller_to_open_player(device_id: int) -> void:
   for player_id in player_devices:
-    var device: Dictionary = player_devices[player_id];
-    if device.type != Enums.INPUT_SOURCES.CONTROLLER:
+    if !_has_controller(player_id):
       _set_player_device(player_id, Enums.INPUT_SOURCES.CONTROLLER, device_id);
       return;
     #/if
@@ -114,14 +129,10 @@ func _on_joy_connection_changed(device_id: int, connected: bool) -> void:
   print("Controller %d %s" % [device_id, "connected" if connected else "disconnected"]);
   if connected:
     if _find_owner(Enums.INPUT_SOURCES.CONTROLLER, device_id) == 0: _give_controller_to_open_player(device_id);
-    return;
+  else:
+    var owner_id := _find_owner(Enums.INPUT_SOURCES.CONTROLLER, device_id);
+    if owner_id != 0: unassign_player(owner_id);
   #/if
-
-  var owner_id := _find_owner(Enums.INPUT_SOURCES.CONTROLLER, device_id);
-  if owner_id == 1:
-    _set_player_device(1, Enums.INPUT_SOURCES.KEYBOARD, -1);
-  elif owner_id != 0:
-    unassign_player(owner_id);
-  #/if
+  _give_out_keyboard();
 #/_on_joy_connection_changed
 #endregion =========================================================================================
