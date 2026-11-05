@@ -43,6 +43,56 @@ const BASE_ROLL_SPEED := 18.0;
 const ROLL_TIME := 0.3;
 #endregion =====================================================================
 
+#region LEDGES =================================================================
+# Falling (or flapping) into a wall whose top is within reach grabs the ledge.
+# Heights are measured up from the player's feet.
+const LEDGE_WALL_CHECK_HEIGHT := 1.2;   # Where we feel for a wall in front of us...
+const LEDGE_REACH := 0.9;               # ...and how far ahead.
+const LEDGE_MIN_HEIGHT := 1.2;          # The ledge's top must be at least this high (lower is just a step)...
+const LEDGE_MAX_HEIGHT := 2.2;          # ...and no higher than this.
+const LEDGE_HANG_HEIGHT := 1.8;         # While hanging, the ledge top sits this far above our feet.
+const LEDGE_CLEARANCE := 1.8;           # Room needed above the ledge to stand up there.
+const LEDGE_MAX_GRAB_RISE := 2.0;       # Only grab when rising slower than this (near a jump's peak, or falling).
+const LEDGE_REGRAB_DELAY := 0.35;       # After dropping, can't grab again for this long.
+const LEDGE_SHIMMY_SPEED := 2.5;
+const LEDGE_CLIMB_TIME := 0.3;          # How long the pull-up takes.
+const LEDGE_DROP_DELAY := 0.15;         # Pulling back on the stick only drops you after hanging this long.
+#endregion =====================================================================
+
+#region LADDERS AND ROPES ======================================================
+const CLIMB_SPEED := 3.5;
+const CLIMB_JUMP_AWAY_SPEED := 5.0;     # Jumping off pushes you this fast away from the ladder or rope.
+const CLIMB_REGRAB_DELAY := 0.4;
+const LADDER_OFFSET := 0.6;             # Distance from the ladder (placed on its wall) to the player's centre.
+const ROPE_OFFSET := 0.35;
+const ROPE_ORBIT_SPEED := 2.5;          # Radians per second moving round the rope with the stick.
+#endregion =====================================================================
+
+#region PUSH AND PULL ==========================================================
+const PUSH_GRAB_TIME := 0.2;            # Walk into a block this long to start pushing it.
+const PUSH_SPEED := 2.5;
+const PUSH_RELEASE_TIME := 0.3;         # Let go of the stick this long to step away from the block.
+const PUSH_REACH := 0.75;               # How far ahead we feel for a pushable block.
+#endregion =====================================================================
+
+#region SWIMMING ===============================================================
+# Binty is a rubber duck: she floats. The roll button dives, and she bobs back up when you let go.
+const SWIM_ENTER_DEPTH := 0.4;          # Feet this far under the surface starts swimming.
+const SWIM_FLOAT_DEPTH := 0.5;          # While floating, feet sit this far under the surface.
+const SWIM_BOB_SHARPNESS := 6.0;        # How quickly she settles to floating depth.
+const SWIM_SPEED := 5.0;
+const SWIM_ACCELERATION := 15.0;
+const SWIM_DECELERATION := 6.0;         # Low: you drift a little in water.
+const DIVE_START_SPEED := 4.0;          # Downward push when you dive.
+const DIVE_SPEED := 4.0;                # Swimming speed underwater, in any direction.
+const DIVE_VERTICAL_SPEED := 3.5;       # Hold jump to rise, roll to sink.
+const DIVE_BUOYANCY := 2.0;             # Rising speed underwater when you're not pushing either way.
+const DIVE_VERTICAL_ACCELERATION := 10.0;
+const AIR_MAX := 10.0;                  # Seconds of air underwater...
+const AIR_REFILL_RATE := 5.0;           # ...refilled at this many seconds per second above water.
+const DROWN_DAMAGE_INTERVAL := 1.0;     # Out of air: lose 1 health this often.
+#endregion =====================================================================
+
 #region ATTACK =================================================================
 # The ground and air combo: three blunt swings. Each entry is one swing, in order.
 #   damage       health it takes off

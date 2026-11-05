@@ -7,6 +7,7 @@ class_name PlayerCharacter;
 #   - Input is read once per frame into move_input and a few BufferedButtons (jump, roll, attack).
 #   - Exactly one state runs at a time (see states/). The state decides what happens next and sets velocity.
 #   - This script owns the shared helpers states use (moving, gravity, facing) and calls move_and_slide() once.
+#   - What's around the player (ledges, ladders, blocks, water, the air meter) lives in env (PlayerEnvironment).
 #   - Health, getting hurt and dying come from Character. What happens after a death (ghost, lost life,
 #     Death's scene) is DeathManager's job; this script just reports it through Signals.player_died.
 # All tuning numbers live in CharStats.
@@ -85,6 +86,7 @@ var can_flap := true;              # One flap per time in the air. Reset on land
 var carried_speed := 0.0;          # Roll speed kept through a roll-jump until landing. 0 = none.
 var attack_index := 0;             # Which swing in the combo comes next.
 var hurt_direction := Vector3.ZERO; # Which way the last hit knocked us.
+var env: PlayerEnvironment;
 var _camera_zones: Array[CameraZone] = []; # Zones we're standing in. The most recently entered one wins.
 var _normal_collision_layer := 0;
 var _normal_collision_mask := 0;
@@ -104,6 +106,7 @@ func _ready() -> void:
   #/if
 
   _apply_placeholder_look();
+  env = PlayerEnvironment.new(self);
   _states = {
     Enums.PLAYER_STATES.GROUNDED: PlayerGroundedState.new(self),
     Enums.PLAYER_STATES.JUMP: PlayerJumpState.new(self),
@@ -114,6 +117,12 @@ func _ready() -> void:
     Enums.PLAYER_STATES.HURT: PlayerHurtState.new(self),
     Enums.PLAYER_STATES.GHOST: PlayerGhostState.new(self),
     Enums.PLAYER_STATES.DEAD: PlayerDeadState.new(self),
+    Enums.PLAYER_STATES.LEDGE_HANG: PlayerLedgeHangState.new(self),
+    Enums.PLAYER_STATES.LEDGE_CLIMB: PlayerLedgeClimbState.new(self),
+    Enums.PLAYER_STATES.CLIMB: PlayerClimbState.new(self),
+    Enums.PLAYER_STATES.PUSH: PlayerPushState.new(self),
+    Enums.PLAYER_STATES.SWIM: PlayerSwimState.new(self),
+    Enums.PLAYER_STATES.DIVE: PlayerDiveState.new(self),
   };
   change_state(Enums.PLAYER_STATES.FALL);
 #/_ready
@@ -122,6 +131,9 @@ func _physics_process(delta: float) -> void:
   _read_input();
   _update_invulnerable_blink();
   time_since_grounded = 0.0 if is_on_floor() else time_since_grounded + delta;
+  env.update(delta);
+  if state != Enums.PLAYER_STATES.DIVE: env.refill_air(delta);
+  _start_swimming_if_in_water();
 
   _current_state.time_in_state += delta;
   _current_state.physics_update(delta);
@@ -170,6 +182,49 @@ func try_ground_actions() -> bool:
   #/if
   return true;
 #/try_ground_actions
+
+# Grabbing things while on the ground: a ladder or rope you walk into, or a block you keep pushing against.
+# Returns true if one started.
+func try_ground_grabs(delta: float) -> bool:
+  var direction := get_move_direction();
+  var climbable := env.get_grabbable_climbable();
+  if climbable != null:
+    var toward := climbable.get_axis_point(global_position.y) - global_position;
+    toward.y = 0.0;
+    if direction.length() > 0.5 && direction.normalized().dot(toward.normalized()) > 0.6:
+      env.grabbed_climbable = climbable;
+      change_state(Enums.PLAYER_STATES.CLIMB);
+      return true;
+    #/if
+  #/if
+
+  var pushable := env.find_pushable();
+  var pressing := !pushable.is_empty() && direction.length() > 0.5 && direction.normalized().dot(-pushable.normal) > 0.7;
+  env.time_pushing_into_block = env.time_pushing_into_block + delta if pressing else 0.0;
+  if env.time_pushing_into_block >= CharStats.PUSH_GRAB_TIME:
+    env.time_pushing_into_block = 0.0;
+    env.grabbed_block = pushable;
+    change_state(Enums.PLAYER_STATES.PUSH);
+    return true;
+  #/if
+  return false;
+#/try_ground_grabs
+
+# Grabbing things in the air: a ladder or rope you touch, or a ledge in front of you. Returns true if one started.
+func try_air_grabs() -> bool:
+  var climbable := env.get_grabbable_climbable();
+  if climbable != null:
+    env.grabbed_climbable = climbable;
+    change_state(Enums.PLAYER_STATES.CLIMB);
+    return true;
+  #/if
+  if !env.can_grab_ledge(): return false;
+  var ledge := env.find_ledge();
+  if ledge.is_empty(): return false;
+  env.grabbed_ledge = ledge;
+  change_state(Enums.PLAYER_STATES.LEDGE_HANG);
+  return true;
+#/try_air_grabs
 
 # Grounded or Fall, depending on where we are. Used when a timed state (roll, attack) finishes.
 func return_to_neutral() -> void:
@@ -233,6 +288,19 @@ func turn_toward_input(delta: float) -> void:
   var target_angle := atan2(-direction.x, -direction.z);
   rotation.y = lerp_angle(rotation.y, target_angle, clampf(CharStats.TURN_SPEED * delta, 0.0, 1.0));
 #/turn_toward_input
+
+# Instantly faces a direction (flat). Used when grabbing ledges, ladders and blocks.
+func face_direction(direction: Vector3) -> void:
+  direction.y = 0.0;
+  if direction.is_zero_approx(): return;
+  rotation.y = atan2(-direction.x, -direction.z);
+#/face_direction
+
+# True if we could slide by `motion` without bumping into anything (the floor doesn't count).
+func can_move_by(motion: Vector3) -> bool:
+  var collision := move_and_collide(motion, true);
+  return collision == null || absf(collision.get_normal().y) >= 0.7;
+#/can_move_by
 
 # Instantly faces where the stick points. Used at the start of a roll or swing.
 func snap_toward_input() -> void:
@@ -304,6 +372,7 @@ func revive_at(spawn: Transform3D) -> void:
   global_transform = spawn;
   velocity = Vector3.ZERO;
   _cur_health = _max_health;
+  env.air = CharStats.AIR_MAX;
   set_ghost_body(false);
   change_state(Enums.PLAYER_STATES.FALL);
   $InvulnTimer.start();
@@ -328,6 +397,17 @@ func _read_input() -> void:
   roll.update(buffer[Enums.INPUT_BUFFER.ROLL_HELD], buffer[Enums.INPUT_BUFFER.ROLL_HELD_TIME]);
   attack.update(buffer[Enums.INPUT_BUFFER.ATTACK_HELD], buffer[Enums.INPUT_BUFFER.ATTACK_HELD_TIME]);
 #/_read_input
+
+# Any state that ends up deep enough in water switches to swimming. This one rule lives here instead of
+# in every state, since you can end up in water from almost anything (falling, rolling, getting knocked back).
+var _states_that_handle_water := [
+  Enums.PLAYER_STATES.SWIM, Enums.PLAYER_STATES.DIVE, Enums.PLAYER_STATES.HURT, Enums.PLAYER_STATES.DEAD,
+  Enums.PLAYER_STATES.GHOST, Enums.PLAYER_STATES.LEDGE_HANG, Enums.PLAYER_STATES.LEDGE_CLIMB, Enums.PLAYER_STATES.CLIMB,
+];
+func _start_swimming_if_in_water() -> void:
+  if _states_that_handle_water.has(state) || !env.is_in_water(): return;
+  if env.get_depth() > CharStats.SWIM_ENTER_DEPTH: change_state(Enums.PLAYER_STATES.SWIM);
+#/_start_swimming_if_in_water
 
 func _apply_placeholder_look(alpha := 1.0) -> void:
   var material := StandardMaterial3D.new();
@@ -361,6 +441,17 @@ func _on_health_depleted() -> void:
 func _on_healed() -> void:
   Signals.player_health_changed.emit(self, _cur_health);
 #/_on_healed
+
+# Out of air underwater: lose one health, with no knockback and no invulnerability.
+func drown() -> void:
+  if !is_alive(): return;
+  _cur_health -= 1;
+  if _cur_health <= 0:
+    _on_health_depleted();
+  else:
+    Signals.player_health_changed.emit(self, _cur_health);
+  #/if
+#/drown
 
 # Falling into a pit, crushing, etc: straight to zero, ignoring dodges and invulnerability.
 func kill() -> void:

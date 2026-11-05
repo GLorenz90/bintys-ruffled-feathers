@@ -15,6 +15,10 @@
 [ext_resource type="Script" path="res://scenes/world/kill_zone.gd" id="24_killzone"]
 [ext_resource type="PackedScene" path="res://scenes/items/pickups/extra_life.tscn" id="25_life"]
 
+[ext_resource type="Script" path="res://scenes/world/climbable.gd" id="30_climb"]
+[ext_resource type="PackedScene" path="res://scenes/world/push_block.tscn" id="31_push"]
+[ext_resource type="Script" path="res://scenes/world/water_volume.gd" id="32_water"]
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tipki"]
 sky_top_color = Color(0.20552272, 0.43556347, 0.8057423, 1)
 sky_horizon_color = Color(0.43361023, 0.5078178, 0.68277293, 1)
@@ -64,6 +68,89 @@ size = Vector2(8, 8)
 
 [sub_resource type="BoxShape3D" id="BoxShape_kill"]
 size = Vector3(300, 2, 300)
+
+[sub_resource type="StandardMaterial3D" id="Mat_course"]
+albedo_color = Color(0.72, 0.68, 0.6, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_ladder"]
+albedo_color = Color(0.5, 0.33, 0.18, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_ladder"]
+material = SubResource("Mat_ladder")
+size = Vector3(0.8, 4.5, 0.1)
+
+[sub_resource type="BoxShape3D" id="Shape_ladder"]
+size = Vector3(1, 4.5, 0.8)
+
+[sub_resource type="CylinderMesh" id="Mesh_rope"]
+material = SubResource("Mat_ladder")
+top_radius = 0.06
+bottom_radius = 0.06
+height = 5.5
+
+[sub_resource type="CylinderShape3D" id="Shape_rope"]
+height = 5.0
+radius = 0.7
+
+[sub_resource type="StandardMaterial3D" id="Mat_water"]
+transparency = 1
+albedo_color = Color(0.2, 0.5, 0.9, 0.45)
+
+[sub_resource type="BoxMesh" id="Mesh_water"]
+material = SubResource("Mat_water")
+size = Vector3(12, 3.7, 12)
+
+[sub_resource type="BoxShape3D" id="Shape_water"]
+size = Vector3(12, 3.7, 12)
+
+[sub_resource type="BoxMesh" id="Mesh_LowBlock"]
+material = SubResource("Mat_course")
+size = Vector3(5, 2.4, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_LowBlock"]
+size = Vector3(5, 2.4, 4)
+
+[sub_resource type="BoxMesh" id="Mesh_TallBlock"]
+material = SubResource("Mat_course")
+size = Vector3(4, 4.5, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_TallBlock"]
+size = Vector3(4, 4.5, 4)
+
+[sub_resource type="BoxMesh" id="Mesh_StepPlatform"]
+material = SubResource("Mat_course")
+size = Vector3(3, 2.6, 3)
+
+[sub_resource type="BoxShape3D" id="Shape_StepPlatform"]
+size = Vector3(3, 2.6, 3)
+
+[sub_resource type="BoxMesh" id="Mesh_PoolBottom"]
+material = SubResource("Mat_course")
+size = Vector3(12, 1, 12)
+
+[sub_resource type="BoxShape3D" id="Shape_PoolBottom"]
+size = Vector3(12, 1, 12)
+
+[sub_resource type="BoxMesh" id="Mesh_PoolFarWall"]
+material = SubResource("Mat_course")
+size = Vector3(1, 4, 14)
+
+[sub_resource type="BoxShape3D" id="Shape_PoolFarWall"]
+size = Vector3(1, 4, 14)
+
+[sub_resource type="BoxMesh" id="Mesh_PoolWallNorth"]
+material = SubResource("Mat_course")
+size = Vector3(12, 4, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_PoolWallNorth"]
+size = Vector3(12, 4, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_PoolWallSouth"]
+material = SubResource("Mat_course")
+size = Vector3(12, 4, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_PoolWallSouth"]
+size = Vector3(12, 4, 1)
 
 [node name="Gym" type="Node3D"]
 
@@ -190,3 +277,112 @@ script = ExtResource("24_killzone")
 [node name="Collision" type="CollisionShape3D" parent="KillZone"]
 shape = SubResource("BoxShape_kill")
 
+[node name="LowBlock" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 1.2, 17)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="LowBlock"]
+mesh = SubResource("Mesh_LowBlock")
+
+[node name="Collision" type="CollisionShape3D" parent="LowBlock"]
+shape = SubResource("Shape_LowBlock")
+
+[node name="TallBlock" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.5, 2.25, 17)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="TallBlock"]
+mesh = SubResource("Mesh_TallBlock")
+
+[node name="Collision" type="CollisionShape3D" parent="TallBlock"]
+shape = SubResource("Shape_TallBlock")
+
+[node name="StepPlatform" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5, 1.3, -3)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="StepPlatform"]
+mesh = SubResource("Mesh_StepPlatform")
+
+[node name="Collision" type="CollisionShape3D" parent="StepPlatform"]
+shape = SubResource("Shape_StepPlatform")
+
+[node name="PoolBottom" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, -4.5, 0)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="PoolBottom"]
+mesh = SubResource("Mesh_PoolBottom")
+
+[node name="Collision" type="CollisionShape3D" parent="PoolBottom"]
+shape = SubResource("Shape_PoolBottom")
+
+[node name="PoolFarWall" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.5, -2, 0)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="PoolFarWall"]
+mesh = SubResource("Mesh_PoolFarWall")
+
+[node name="Collision" type="CollisionShape3D" parent="PoolFarWall"]
+shape = SubResource("Shape_PoolFarWall")
+
+[node name="PoolWallNorth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, -2, -6.5)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="PoolWallNorth"]
+mesh = SubResource("Mesh_PoolWallNorth")
+
+[node name="Collision" type="CollisionShape3D" parent="PoolWallNorth"]
+shape = SubResource("Shape_PoolWallNorth")
+
+[node name="PoolWallSouth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, -2, 6.5)
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="PoolWallSouth"]
+mesh = SubResource("Mesh_PoolWallSouth")
+
+[node name="Collision" type="CollisionShape3D" parent="PoolWallSouth"]
+shape = SubResource("Shape_PoolWallSouth")
+
+[node name="Ladder" type="Area3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -8.5, 0, 15)
+script = ExtResource("30_climb")
+height = 4.5
+
+[node name="Mesh" type="MeshInstance3D" parent="Ladder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0.05)
+mesh = SubResource("Mesh_ladder")
+
+[node name="Collision" type="CollisionShape3D" parent="Ladder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0.4)
+shape = SubResource("Shape_ladder")
+
+[node name="Rope" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.5, 17)
+script = ExtResource("30_climb")
+kind = 1
+height = 5.0
+
+[node name="Mesh" type="MeshInstance3D" parent="Rope"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 0)
+mesh = SubResource("Mesh_rope")
+
+[node name="Collision" type="CollisionShape3D" parent="Rope"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("Shape_rope")
+
+[node name="PushBlock" parent="." instance=ExtResource("31_push")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 2)
+
+[node name="Pool" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, -2.15, 0)
+script = ExtResource("32_water")
+
+[node name="Mesh" type="MeshInstance3D" parent="Pool"]
+mesh = SubResource("Mesh_water")
+
+[node name="Collision" type="CollisionShape3D" parent="Pool"]
+shape = SubResource("Shape_water")

@@ -11,6 +11,7 @@ func enter(_previous: Enums.PLAYER_STATES) -> void:
 #/enter
 
 func physics_update(delta: float) -> void:
+  if player.try_air_grabs(): return;
   if player.is_on_floor():
     player.change_state(Enums.PLAYER_STATES.GROUNDED);
     return;

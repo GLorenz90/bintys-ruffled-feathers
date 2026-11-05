@@ -13,6 +13,7 @@ func enter(previous: Enums.PLAYER_STATES) -> void:
 #/enter
 
 func physics_update(delta: float) -> void:
+  if player.try_air_grabs(): return;
   if !player.jump.held:
     player.velocity.y *= CharStats.JUMP_CUT_MULTIPLIER;
     player.change_state(Enums.PLAYER_STATES.FALL);

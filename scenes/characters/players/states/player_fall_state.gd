@@ -6,6 +6,7 @@ class_name PlayerFallState
 # Right above the ground it's neither: the press stays buffered and becomes a jump on landing.
 
 func physics_update(delta: float) -> void:
+  if player.try_air_grabs(): return;
   if player.is_on_floor():
     player.change_state(Enums.PLAYER_STATES.GROUNDED);
     return;

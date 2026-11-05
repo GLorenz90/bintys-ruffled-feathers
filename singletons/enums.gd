@@ -10,7 +10,13 @@ enum PLAYER_STATES {
   ATTACK,
   HURT,
   GHOST,
-  DEAD
+  DEAD,
+  LEDGE_HANG,
+  LEDGE_CLIMB,
+  CLIMB,
+  PUSH,
+  SWIM,
+  DIVE
 }
 
 enum CHARACTERS {

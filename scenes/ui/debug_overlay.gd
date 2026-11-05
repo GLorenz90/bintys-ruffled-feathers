@@ -43,6 +43,7 @@ func _player_lines(player_id: int) -> PackedStringArray:
     "  velocity: %s" % _format_vector(player.velocity),
     "  speed: %.2f" % Vector2(player.velocity.x, player.velocity.z).length(),
     "  on floor: %s" % player.is_on_floor(),
+    "  air: %.1f  in water: %s" % [player.env.air, player.env.is_in_water()],
   ];
 #/_player_lines
 
