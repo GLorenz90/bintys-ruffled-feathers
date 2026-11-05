@@ -1,8 +1,9 @@
 extends PlayerState
 class_name PlayerFlapState
 
-# Wing flap: hold jump in the air to slow your fall. Starts with a small pop upward,
-# then settles into a slow, steady descent. Ends on release, landing, or after FLAP_TIME.
+# Wing flap: slows your fall. Starts with a small pop upward, then settles into a slow, steady descent.
+# Starts on its own if you're still holding jump at a jump's peak, or with a fresh jump press while falling.
+# Ends on release, landing, or after FLAP_TIME. One flap per time in the air.
 
 func enter(_previous: Enums.PLAYER_STATES) -> void:
   player.can_flap = false;

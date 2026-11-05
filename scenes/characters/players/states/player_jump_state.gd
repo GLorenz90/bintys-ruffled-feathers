@@ -2,6 +2,7 @@ extends PlayerState
 class_name PlayerJumpState
 
 # Rising after a jump. Letting go of jump early cuts the jump short, so a tap is a small hop.
+# Still holding jump at the peak goes straight into the wing flap, for the longest possible jump.
 
 func enter(previous: Enums.PLAYER_STATES) -> void:
   player.velocity.y = CharStats.JUMP_VELOCITY;
@@ -18,7 +19,7 @@ func physics_update(delta: float) -> void:
     return;
   #/if
   if player.velocity.y <= 0.0:
-    player.change_state(Enums.PLAYER_STATES.FALL);
+    player.change_state(Enums.PLAYER_STATES.FLAP if player.can_flap else Enums.PLAYER_STATES.FALL);
     return;
   #/if
   if player.attack.is_buffered():
