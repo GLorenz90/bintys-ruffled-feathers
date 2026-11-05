@@ -7,6 +7,8 @@ class_name PlayerCharacter;
 #   - Input is read once per frame into move_input and a few BufferedButtons (jump, roll, attack).
 #   - Exactly one state runs at a time (see states/). The state decides what happens next and sets velocity.
 #   - This script owns the shared helpers states use (moving, gravity, facing) and calls move_and_slide() once.
+#   - Health, getting hurt and dying come from Character. What happens after a death (ghost, lost life,
+#     Death's scene) is DeathManager's job; this script just reports it through Signals.player_died.
 # All tuning numbers live in CharStats.
 
 signal state_changed(previous: Enums.PLAYER_STATES, next: Enums.PLAYER_STATES);
@@ -21,10 +23,13 @@ const SHAPE_ROLL: CapsuleShape3D = preload("res://resources/shapes/player_shape_
 const BODY_NORMAL: CapsuleMesh = preload("res://resources/meshes/test_body.tres");
 const BODY_ROLL: CapsuleMesh = preload("res://resources/meshes/test_body_short.tres");
 
+# One scene per swing in CharStats.ATTACK_COMBO, in the same order.
 const SWING_ATTACKS: Array[PackedScene] = [
   preload("res://scenes/attacks/swing_attack_1.tscn"),
   preload("res://scenes/attacks/swing_attack_2.tscn"),
+  preload("res://scenes/attacks/swing_attack_3.tscn"),
 ];
+const GHOST_ALPHA := 0.35;
 
 const TERRAIN_LAYER_MASK := 1; # Physics layer 1 is "terrain" (see Project Settings > Layer Names).
 
@@ -79,14 +84,19 @@ var time_since_grounded := 0.0;   # For coyote time.
 var can_flap := true;              # One flap per time in the air. Reset on landing.
 var carried_speed := 0.0;          # Roll speed kept through a roll-jump until landing. 0 = none.
 var attack_index := 0;             # Which swing in the combo comes next.
+var hurt_direction := Vector3.ZERO; # Which way the last hit knocked us.
 var _camera_zones: Array[CameraZone] = []; # Zones we're standing in. The most recently entered one wins.
+var _normal_collision_layer := 0;
+var _normal_collision_mask := 0;
 #endregion =========================================================================================
 
 #region BUILT IN ===================================================================================
 func _ready() -> void:
-  super();
   _max_health = CharStats.MAX_HEALTH;
-  _cur_health = CharStats.P1_CURRENT_HEALTH if is_p1 else CharStats.P2_CURRENT_HEALTH;
+  _cur_health = _max_health;
+  $InvulnTimer.wait_time = CharStats.INVULNERABLE_TIME;
+  _normal_collision_layer = collision_layer;
+  _normal_collision_mask = collision_mask;
   if is_p1:
     Global.p1_char = self;
   else:
@@ -101,13 +111,16 @@ func _ready() -> void:
     Enums.PLAYER_STATES.FLAP: PlayerFlapState.new(self),
     Enums.PLAYER_STATES.ROLL: PlayerRollState.new(self),
     Enums.PLAYER_STATES.ATTACK: PlayerAttackState.new(self),
+    Enums.PLAYER_STATES.HURT: PlayerHurtState.new(self),
+    Enums.PLAYER_STATES.GHOST: PlayerGhostState.new(self),
+    Enums.PLAYER_STATES.DEAD: PlayerDeadState.new(self),
   };
   change_state(Enums.PLAYER_STATES.FALL);
 #/_ready
 
 func _physics_process(delta: float) -> void:
-  super(delta);
   _read_input();
+  _update_invulnerable_blink();
   time_since_grounded = 0.0 if is_on_floor() else time_since_grounded + delta;
 
   _current_state.time_in_state += delta;
@@ -260,8 +273,51 @@ func get_camera_zone() -> CameraZone:
 #/get_camera_zone
 
 func spawn_swing(index: int) -> void:
-  _spawn_attack(SWING_ATTACKS[index % SWING_ATTACKS.size()], CharStats.ATTACK_TIME);
+  var swing: Dictionary = CharStats.ATTACK_COMBO[index];
+  var attack := _spawn_attack(SWING_ATTACKS[index], swing.time);
+  attack.damage = swing.damage;
+  attack.knockback = swing.knockback;
+  attack.hit_stop = swing.hit_stop;
 #/spawn_swing
+#endregion =========================================================================================
+
+#region LIFE AND DEATH =============================================================================
+func is_alive() -> bool:
+  return state != Enums.PLAYER_STATES.GHOST && state != Enums.PLAYER_STATES.DEAD;
+#/is_alive
+
+func is_ghost() -> bool:
+  return state == Enums.PLAYER_STATES.GHOST;
+#/is_ghost
+
+func get_partner() -> PlayerCharacter:
+  return Global.p2_char if is_p1 else Global.p1_char;
+#/get_partner
+
+# Called by DeathManager when our partner is still alive.
+func become_ghost() -> void:
+  change_state(Enums.PLAYER_STATES.GHOST);
+#/become_ghost
+
+# Back to full health at a spot, with a short grace period of invulnerability.
+func revive_at(spawn: Transform3D) -> void:
+  global_transform = spawn;
+  velocity = Vector3.ZERO;
+  _cur_health = _max_health;
+  set_ghost_body(false);
+  change_state(Enums.PLAYER_STATES.FALL);
+  $InvulnTimer.start();
+  Signals.player_health_changed.emit(self, _cur_health);
+  Signals.player_revived.emit(self);
+#/revive_at
+
+# Ghosts pass through everything and can't be touched or collect pickups.
+func set_ghost_body(is_ghost_body: bool) -> void:
+  collision_layer = 0 if is_ghost_body else _normal_collision_layer;
+  collision_mask = 0 if is_ghost_body else _normal_collision_mask;
+  _apply_placeholder_look(GHOST_ALPHA if is_ghost_body else 1.0);
+#/set_ghost_body
+
 #endregion =========================================================================================
 
 #region PRIVATE ====================================================================================
@@ -273,14 +329,43 @@ func _read_input() -> void:
   attack.update(buffer[Enums.INPUT_BUFFER.ATTACK_HELD], buffer[Enums.INPUT_BUFFER.ATTACK_HELD_TIME]);
 #/_read_input
 
-func _apply_placeholder_look() -> void:
+func _apply_placeholder_look(alpha := 1.0) -> void:
   var material := StandardMaterial3D.new();
-  material.albedo_color = PLACEHOLDER_COLORS.get(char_type, Color.WHITE);
+  var color: Color = PLACEHOLDER_COLORS.get(char_type, Color.WHITE);
+  material.albedo_color = Color(color, alpha);
+  if alpha < 1.0: material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA;
   $Model/Body.material_override = material;
 #/_apply_placeholder_look
 
-func _die() -> void:
-  pass;
-  # M3: become a ghost, or lose a shared life.
-#/_die
+# Blink while invulnerable after a hit.
+func _update_invulnerable_blink() -> void:
+  var blinking: bool = !$InvulnTimer.is_stopped() && is_alive();
+  $Model.visible = !blinking || fmod($InvulnTimer.time_left * CharStats.INVULNERABLE_BLINK_RATE, 1.0) < 0.5;
+#/_update_invulnerable_blink
+
+#endregion =========================================================================================
+
+#region CHARACTER OVERRIDES ========================================================================
+func _on_hurt(_amount: int, from_position: Vector3, _knockback: float) -> void:
+  hurt_direction = get_knockback_direction(from_position);
+  change_state(Enums.PLAYER_STATES.HURT);
+  Signals.player_health_changed.emit(self, _cur_health);
+#/_on_hurt
+
+func _on_health_depleted() -> void:
+  Signals.player_health_changed.emit(self, _cur_health);
+  change_state(Enums.PLAYER_STATES.DEAD);
+  Signals.player_died.emit(self);
+#/_on_health_depleted
+
+func _on_healed() -> void:
+  Signals.player_health_changed.emit(self, _cur_health);
+#/_on_healed
+
+# Falling into a pit, crushing, etc: straight to zero, ignoring dodges and invulnerability.
+func kill() -> void:
+  if !is_alive(): return;
+  _cur_health = 0;
+  _on_health_depleted();
+#/kill
 #endregion =========================================================================================

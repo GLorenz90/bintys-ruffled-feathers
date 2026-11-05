@@ -3,7 +3,10 @@
 [ext_resource type="Script" uid="uid://dofirhscee6b0" path="res://scenes/main.gd" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://cob7iwpnf3bsm" path="res://scenes/device_manager.gd" id="2_sugp2"]
 [ext_resource type="Script" uid="uid://dhaq5k2cyv6ak" path="res://scenes/input_manager.gd" id="3_jyhfs"]
-[ext_resource type="PackedScene" uid="uid://dffslabmmykrs" path="res://scenes/ui/test_hud.tscn" id="8_85g3d"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="8_hud"]
+[ext_resource type="Script" path="res://scenes/death_manager.gd" id="13_death"]
+[ext_resource type="PackedScene" path="res://scenes/ui/death_screen.tscn" id="14_deathscreen"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="15_pause"]
 [ext_resource type="PackedScene" path="res://scenes/levels/gym.tscn" id="9_gym"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="10_debug"]
 [ext_resource type="Script" uid="uid://43qi8c7dm6c6" path="res://scenes/camera/camera_director.gd" id="11_director"]
@@ -67,12 +70,14 @@ render_target_update_mode = 0
 
 [node name="UiLayer" type="Control" parent="Hud" unique_id=1815324038]
 layout_mode = 3
-anchors_preset = 10
+anchors_preset = 15
 anchor_right = 1.0
-offset_bottom = 73.0
+anchor_bottom = 1.0
 grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="Test Hud" parent="Hud/UiLayer" unique_id=1170973187 instance=ExtResource("8_85g3d")]
+[node name="Hud" parent="Hud/UiLayer" instance=ExtResource("8_hud")]
 layout_mode = 1
 
 [node name="SplitDivider" type="ColorRect" parent="Hud" unique_id=1699633856]
@@ -86,3 +91,12 @@ offset_right = 3.0
 color = Color(0.05, 0.05, 0.08, 1)
 
 [node name="DebugOverlay" parent="." unique_id=1381828584 instance=ExtResource("10_debug")]
+
+[node name="DeathManager" type="Node" parent="." node_paths=PackedStringArray("death_screen")]
+script = ExtResource("13_death")
+death_screen = NodePath("../DeathScreen")
+
+[node name="DeathScreen" parent="." instance=ExtResource("14_deathscreen")]
+
+[node name="PauseMenu" parent="." node_paths=PackedStringArray("death_screen") instance=ExtResource("15_pause")]
+death_screen = NodePath("../DeathScreen")

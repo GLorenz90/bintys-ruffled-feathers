@@ -31,16 +31,20 @@ func _ready() -> void:
 #/_ready
 
 func _physics_process(delta: float) -> void:
-  if Global.p1_char == null || Global.p2_char == null: return;
-  if left_camera.targets.is_empty(): _set_mode(mode, true); # Players spawned since _ready.
+  if Global.p1_char == null: return;
+  var player_count := 2 if Global.p2_char != null else 1;
+  if mode == MODES.SHARED && left_camera.targets.size() != player_count: _set_mode(MODES.SHARED, true); # Someone joined.
+  if Global.p2_char == null: return;
 
+  # Only split when both are alive: a ghost is leashed to its partner, so one view is enough.
+  var both_alive := Global.p1_char.is_alive() && Global.p2_char.is_alive();
   var spread := Global.p1_char.global_position.distance_to(Global.p2_char.global_position);
-  var zones_differ := Global.p1_char.get_camera_zone() != Global.p2_char.get_camera_zone();
+  var zones_differ := both_alive && Global.p1_char.get_camera_zone() != Global.p2_char.get_camera_zone();
   _time_in_same_zone = 0.0 if zones_differ else _time_in_same_zone + delta;
 
-  if mode == MODES.SHARED && (spread > CameraStats.SPLIT_DISTANCE || zones_differ):
+  if mode == MODES.SHARED && both_alive && (spread > CameraStats.SPLIT_DISTANCE || zones_differ):
     _set_mode(MODES.SPLIT);
-  elif mode == MODES.SPLIT && spread < CameraStats.MERGE_DISTANCE && _time_in_same_zone >= CameraStats.ZONE_MERGE_DELAY:
+  elif mode == MODES.SPLIT && (!both_alive || (spread < CameraStats.MERGE_DISTANCE && _time_in_same_zone >= CameraStats.ZONE_MERGE_DELAY)):
     _set_mode(MODES.SHARED);
   #/if
 #/_physics_process

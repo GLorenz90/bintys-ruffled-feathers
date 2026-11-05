@@ -245,9 +245,13 @@ func _get_wanted_distance(zone: CameraZone) -> float:
   return wanted;
 #/_get_wanted_distance
 
-# The zone the first target is standing in (P1 leads on a shared screen), or null.
+# The zone the first living target is standing in (P1 leads on a shared screen), or null.
+# Ghosts don't count: they float through zones without triggering them.
 func _get_active_zone() -> CameraZone:
-  return targets[0].get_camera_zone();
+  for target in targets:
+    if target.is_alive(): return target.get_camera_zone();
+  #/for
+  return null;
 #/_get_active_zone
 
 # Turns a sharpness into a per-frame lerp weight that behaves the same at any frame rate.

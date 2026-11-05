@@ -1,0 +1,41 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://b6q1xfhb531nx" path="res://scenes/characters/character.tscn" id="1_char"]
+[ext_resource type="Script" path="res://scenes/characters/enemies/training_dummy.gd" id="2_dummy"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_post"]
+top_radius = 0.35
+bottom_radius = 0.45
+height = 1.8
+
+[sub_resource type="SphereMesh" id="SphereMesh_head"]
+radius = 0.35
+height = 0.7
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape_dummy"]
+radius = 0.45
+height = 2.2
+
+[node name="TrainingDummy" instance=ExtResource("1_char")]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("2_dummy")
+
+[node name="Collision" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("CapsuleShape_dummy")
+
+[node name="Body" type="MeshInstance3D" parent="Model" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CylinderMesh_post")
+
+[node name="Head" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("SphereMesh_head")
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 0)
+billboard = 1
+outline_size = 12
+font_size = 48
+text = "Total: 0"

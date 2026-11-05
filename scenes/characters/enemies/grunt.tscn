@@ -1,0 +1,55 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://b6q1xfhb531nx" path="res://scenes/characters/character.tscn" id="1_char"]
+[ext_resource type="Script" path="res://scenes/characters/enemies/grunt.gd" id="2_grunt"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_grunt"]
+radius = 0.55
+height = 1.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_snout"]
+size = Vector3(0.5, 0.3, 0.4)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape_grunt"]
+radius = 0.55
+height = 1.6
+
+[sub_resource type="CylinderShape3D" id="CylinderShape_contact"]
+height = 1.6
+radius = 0.8
+
+[node name="Grunt" instance=ExtResource("1_char")]
+collision_layer = 4
+collision_mask = 7
+script = ExtResource("2_grunt")
+
+[node name="Collision" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("CapsuleShape_grunt")
+
+[node name="Body" type="MeshInstance3D" parent="Model" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+mesh = SubResource("CapsuleMesh_grunt")
+
+[node name="Snout" type="MeshInstance3D" parent="Model/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, -0.55)
+mesh = SubResource("BoxMesh_snout")
+
+[node name="ContactHitbox" type="Area3D" parent="."]
+collision_layer = 64
+collision_mask = 2
+monitorable = false
+
+[node name="Shape" type="CollisionShape3D" parent="ContactHitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("CylinderShape_contact")
+
+[node name="ConfusedLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+visible = false
+billboard = 1
+no_depth_test = true
+modulate = Color(0.75, 0.85, 1, 1)
+outline_size = 16
+font_size = 96
+text = "?"

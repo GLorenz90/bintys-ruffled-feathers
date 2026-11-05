@@ -1,6 +1,7 @@
 extends Node
 
-# Every number that decides how Binty and Glinty feel lives here, grouped by move.
+# Every number that decides how Binty, Glinty and the enemies feel lives here, grouped by move.
+# Values that change during play (current lives, money, deaths) live in GameState instead.
 # Speeds are metres per second, accelerations metres per second squared, times in seconds.
 # Gravity itself is the project setting physics/3d/default_gravity (40).
 #
@@ -42,10 +43,65 @@ const BASE_ROLL_SPEED := 18.0;
 const ROLL_TIME := 0.3;
 #endregion =====================================================================
 
-#region ATTACK (placeholder until M3) ==========================================
-const ATTACK_TIME := 0.25;              # How long one swing lasts.
-const ATTACK_CHAIN_AFTER := 0.12;       # The next swing can start this far into the current one.
+#region ATTACK =================================================================
+# The ground and air combo: three blunt swings. Each entry is one swing, in order.
+#   damage       health it takes off
+#   knockback    how hard it shoves the target away (m/s)
+#   time         how long the swing lasts
+#   chain_after  how far into the swing the next press is accepted (or a jump / roll can cancel it)
+#   hit_stop     how long the game freezes on a hit, for impact. The finisher hits hardest.
+const ATTACK_COMBO := [
+  {"damage": 1, "knockback": 5.0, "time": 0.25, "chain_after": 0.12, "hit_stop": 0.05},
+  {"damage": 1, "knockback": 6.0, "time": 0.25, "chain_after": 0.12, "hit_stop": 0.05},
+  {"damage": 2, "knockback": 12.0, "time": 0.4, "chain_after": 0.3, "hit_stop": 0.11},
+];
 const ATTACK_MOVE_MULTIPLIER := 0.3;    # Fraction of run speed while swinging.
+const HIT_STOP_TIME_SCALE := 0.05;      # Game speed during hit stop (0 = full freeze).
+#endregion =====================================================================
+
+#region GETTING HURT ===========================================================
+const HURT_TIME := 0.35;                # Control is lost for this long after a hit.
+const HURT_KNOCKBACK := 9.0;            # Pushed away from whatever hit you (m/s)...
+const HURT_KNOCKUP := 6.0;              # ...and popped up a little.
+const INVULNERABLE_TIME := 1.5;         # Can't be hurt again for this long. The body blinks.
+const INVULNERABLE_BLINK_RATE := 12.0;  # Blinks per second.
+#endregion =====================================================================
+
+#region GHOST ==================================================================
+# In co-op, whoever dies first floats as a ghost until their partner reaches a checkpoint.
+const GHOST_SPEED := 9.0;
+const GHOST_ACCELERATION := 25.0;
+const GHOST_HOVER_HEIGHT := 1.5;        # Floats this high above the partner's feet.
+const GHOST_VERTICAL_SHARPNESS := 3.0;  # How quickly it drifts to that height.
+const GHOST_LEASH_DISTANCE := 8.0;      # Gets pulled back toward the partner past this (keeps the screen shared).
+const GHOST_LEASH_PULL := 6.0;          # Pull speed per metre past the leash.
+const BOO_RADIUS := 5.0;                # Attack button as a ghost: enemies this close get confused...
+const BOO_CONFUSE_TIME := 2.5;          # ...for this long.
+const BOO_COOLDOWN := 4.0;
+#endregion =====================================================================
+
+#region LIVES ==================================================================
+const STARTING_LIVES := 3;
+const MAX_LIVES := 99;
+const DEATH_SCREEN_TIME := 1.5;         # How long the placeholder Death scene shows on an ordinary death.
+const DEATH_COUNTER_BONUS_MONEY := 25;  # Placeholder: what a hidden 1-up gives in Death Counter mode.
+#endregion =====================================================================
+
+#region ENEMY: GRUNT ===========================================================
+const GRUNT_MAX_HEALTH := 4;
+const GRUNT_SPEED := 4.0;
+const GRUNT_ACCELERATION := 20.0;
+const GRUNT_TURN_SPEED := 8.0;
+const GRUNT_SIGHT_RANGE := 10.0;        # Starts chasing a player this close...
+const GRUNT_LOSE_RANGE := 16.0;         # ...and gives up past this.
+const GRUNT_CONTACT_DAMAGE := 1;
+const GRUNT_STUN_TIME := 0.5;           # Stops chasing this long after being hit.
+const GRUNT_KNOCKBACK_FRICTION := 25.0; # How quickly knockback slides to a stop.
+const GRUNT_SILVER_DROP := 3;           # Small silver dropped on defeat.
+#endregion =====================================================================
+
+#region ENEMY: TRAINING DUMMY ==================================================
+const DUMMY_HEAL_DELAY := 2.0;          # Heals back to full this long after the last hit. Never dies.
 #endregion =====================================================================
 
 #region HEALTH =================================================================
@@ -69,15 +125,4 @@ var ROLL_SPEED: float:
   get: return BASE_ROLL_SPEED + ADJUST_ROLL_SPEED;
 var MAX_HEALTH: int:
   get: return BASE_MAX_HEALTH + ADJUST_MAX_HEALTH;
-#endregion =====================================================================
-
-#region PLAYER STATS ===========================================================
-var P1_CURRENT_HEALTH := MAX_HEALTH:
-  set(value):
-    P1_CURRENT_HEALTH = clampi(value, 0, MAX_HEALTH);
-var P2_CURRENT_HEALTH := MAX_HEALTH:
-  set(value):
-    P2_CURRENT_HEALTH = clampi(value, 0, MAX_HEALTH);
-
-var CURRENT_MONEY := 0;
 #endregion =====================================================================

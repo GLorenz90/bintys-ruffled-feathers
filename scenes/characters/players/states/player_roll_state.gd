@@ -3,6 +3,7 @@ class_name PlayerRollState
 
 # Dodge roll along the ground at a fixed speed. Rolls toward the stick, or straight ahead if it's centred.
 # Jumping out of a roll keeps the roll's speed through the jump (see PlayerJumpState).
+# It's a dodge: hits pass straight through for the whole roll.
 
 var _direction := Vector3.ZERO;
 
@@ -10,10 +11,12 @@ func enter(_previous: Enums.PLAYER_STATES) -> void:
   player.snap_toward_input();
   _direction = player.get_facing_direction();
   player.set_roll_shape(true);
+  player._dodging = true;
 #/enter
 
 func exit(_next: Enums.PLAYER_STATES) -> void:
   player.set_roll_shape(false);
+  player._dodging = false;
 #/exit
 
 func physics_update(delta: float) -> void:

@@ -1,0 +1,84 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/death_screen.gd" id="1_ds"]
+
+[sub_resource type="StyleBoxFlat" id="Style_panel"]
+bg_color = Color(0.05, 0.03, 0.08, 0.92)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 40.0
+content_margin_top = 28.0
+content_margin_right = 40.0
+content_margin_bottom = 28.0
+
+[node name="DeathScreen" type="CanvasLayer"]
+layer = 50
+script = ExtResource("1_ds")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.5)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -150.0
+offset_right = 380.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Content" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Panel/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.6, 0.9, 1)
+theme_override_font_sizes/font_size = 22
+text = "DEATH"
+horizontal_alignment = 1
+
+[node name="Line" type="Label" parent="Panel/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "\"Back so soon?\""
+horizontal_alignment = 1
+
+[node name="Explanation" type="Label" parent="Panel/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "..."
+horizontal_alignment = 1
+
+[node name="Choices" type="HBoxContainer" parent="Panel/Content"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 24
+
+[node name="KeepLives" type="Button" parent="Panel/Content/Choices"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Keep my lives (start over)"
+
+[node name="DeathCounter" type="Button" parent="Panel/Content/Choices"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Switch to the Death Counter"
+
+[node name="Placeholder" type="Label" parent="Panel/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.35)
+theme_override_font_sizes/font_size = 14
+text = "[placeholder scene and line - written in M9]"
+horizontal_alignment = 1

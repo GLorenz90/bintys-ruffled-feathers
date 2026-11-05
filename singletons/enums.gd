@@ -7,7 +7,10 @@ enum PLAYER_STATES {
   FALL,
   FLAP,
   ROLL,
-  ATTACK
+  ATTACK,
+  HURT,
+  GHOST,
+  DEAD
 }
 
 enum CHARACTERS {

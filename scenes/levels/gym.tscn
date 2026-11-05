@@ -8,6 +8,13 @@
 
 [ext_resource type="Script" path="res://scenes/camera/camera_zone.gd" id="7_zone"]
 
+[ext_resource type="PackedScene" path="res://scenes/characters/enemies/training_dummy.tscn" id="20_dummy"]
+[ext_resource type="PackedScene" path="res://scenes/characters/enemies/grunt.tscn" id="21_grunt"]
+[ext_resource type="PackedScene" path="res://scenes/world/spike_strip.tscn" id="22_spikes"]
+[ext_resource type="PackedScene" path="res://scenes/world/checkpoint.tscn" id="23_checkpoint"]
+[ext_resource type="Script" path="res://scenes/world/kill_zone.gd" id="24_killzone"]
+[ext_resource type="PackedScene" path="res://scenes/items/pickups/extra_life.tscn" id="25_life"]
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tipki"]
 sky_top_color = Color(0.20552272, 0.43556347, 0.8057423, 1)
 sky_horizon_color = Color(0.43361023, 0.5078178, 0.68277293, 1)
@@ -54,6 +61,9 @@ albedo_color = Color(0.2, 0.5, 1, 0.35)
 [sub_resource type="PlaneMesh" id="PlaneMesh_zone"]
 material = SubResource("Mat_zone")
 size = Vector2(8, 8)
+
+[sub_resource type="BoxShape3D" id="BoxShape_kill"]
+size = Vector3(300, 2, 300)
 
 [node name="Gym" type="Node3D"]
 
@@ -148,3 +158,35 @@ shape = SubResource("BoxShape_zone")
 [node name="FloorMarker" type="MeshInstance3D" parent="SideOnCameraZone"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
 mesh = SubResource("PlaneMesh_zone")
+
+[node name="DummyA" parent="." instance=ExtResource("20_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -4)
+
+[node name="DummyB" parent="." instance=ExtResource("20_dummy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, -5)
+
+[node name="GruntA" parent="." instance=ExtResource("21_grunt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 10)
+
+[node name="GruntB" parent="." instance=ExtResource("21_grunt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 13)
+
+[node name="SpikeStrip" parent="." instance=ExtResource("22_spikes")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -12)
+
+[node name="CheckpointA" parent="." instance=ExtResource("23_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 10)
+
+[node name="CheckpointB" parent="." instance=ExtResource("23_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -16)
+
+[node name="ExtraLife" parent="." instance=ExtResource("25_life")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 1.2, -2)
+
+[node name="KillZone" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -20, 0)
+script = ExtResource("24_killzone")
+
+[node name="Collision" type="CollisionShape3D" parent="KillZone"]
+shape = SubResource("BoxShape_kill")
+

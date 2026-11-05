@@ -3,6 +3,10 @@ class_name Attack
 
 #region PUBLIC VARS ================================================================================
 @export var damage := 1;
+## How hard a hit shoves the target away (m/s).
+@export var knockback := 5.0;
+## Seconds the game freezes on a hit, for impact.
+@export var hit_stop := 0.05;
 ## Seconds before the attack removes itself. <= 0 means it lives until end_attack() is called.
 @export var lifetime := 0.25;
 ## True: tracks the attacker every physics frame. False: stays where it was spawned.
@@ -63,9 +67,9 @@ func _on_attack_start() -> void:
 #/_on_attack_start
 
 func _on_hit(body: Node3D) -> void:
-  if body.has_method("damage"):
-    body.damage(damage, global_position);
-  #/if
+  if !(body is Character): return;
+  var from_position := attacker.global_position if is_instance_valid(attacker) else global_position;
+  if body.hit(damage, from_position, knockback): Global.hit_stop(hit_stop);
 #/_on_hit
 
 func _on_attack_end() -> void:
