@@ -3,7 +3,7 @@ class_name Grunt
 
 # A basic enemy. Stands around until a living player comes within sight, then chases them
 # and hurts them on contact. Getting hit stuns it briefly and knocks it back. A ghost's boo
-# confuses it: it stops, spins, and is harmless for a moment. Drops silver when defeated.
+# confuses it: it stops, spins, and is harmless for a moment. Drops silver (and sometimes health) when defeated.
 # Numbers live in CharStats under ENEMY: GRUNT.
 
 enum STATES { IDLE, CHASE, STUNNED, CONFUSED, DEFEATED }
@@ -12,6 +12,8 @@ const BODY_COLOR := Color(0.85, 0.25, 0.2);
 const CONFUSED_SPIN_SPEED := 4.0;   # Radians per second.
 const DEFEAT_TIME := 0.25;
 const SILVER_SCENE: PackedScene = preload("res://scenes/items/pickups/small_silver.tscn");
+const CRUMB_SCENE: PackedScene = preload("res://scenes/items/pickups/health_crumb.tscn");
+const SLICE_SCENE: PackedScene = preload("res://scenes/items/pickups/health_slice.tscn");
 
 var state: STATES = STATES.IDLE;
 var _time_in_state := 0.0;
@@ -149,14 +151,24 @@ func _hurt_touching_players() -> void:
   #/for
 #/_hurt_touching_players
 
-func _drop_silver() -> void:
-  for i in CharStats.GRUNT_SILVER_DROP:
-    var silver: RigidBody3D = SILVER_SCENE.instantiate();
-    get_parent().add_child(silver);
-    silver.global_position = global_position + Vector3.UP;
-    silver.apply_central_impulse(Vector3(randf_range(-1.0, 1.0), 2.5, randf_range(-1.0, 1.0)) * 0.05);
-  #/for
-#/_drop_silver
+# Silver every time, plus a roll for health (see ENEMY DROPS in CharStats).
+func _drop_loot() -> void:
+  for i in CharStats.GRUNT_SILVER_DROP: _drop(SILVER_SCENE);
+
+  var roll := randf();
+  if roll < CharStats.ENEMY_DROP_SLICE_CHANCE:
+    _drop(SLICE_SCENE);
+  elif roll < CharStats.ENEMY_DROP_SLICE_CHANCE + CharStats.ENEMY_DROP_CRUMB_CHANCE:
+    _drop(CRUMB_SCENE);
+  #/if
+#/_drop_loot
+
+func _drop(pickup_scene: PackedScene) -> void:
+  var pickup: RigidBody3D = pickup_scene.instantiate();
+  get_parent().add_child(pickup);
+  pickup.global_position = global_position + Vector3.UP;
+  pickup.apply_central_impulse(Vector3(randf_range(-1.0, 1.0), 2.5, randf_range(-1.0, 1.0)) * 0.05);
+#/_drop
 #endregion =========================================================================================
 
 #region CHARACTER OVERRIDES ========================================================================
@@ -175,7 +187,7 @@ func _on_health_depleted() -> void:
   collision_layer = 0;
   collision_mask = 0;
   _contact_hitbox.set_deferred("monitoring", false);
-  _drop_silver.call_deferred();
+  _drop_loot.call_deferred();
 
   var tween := create_tween();
   tween.tween_property($Model, "scale", Vector3(1.4, 0.2, 1.4), DEFEAT_TIME);

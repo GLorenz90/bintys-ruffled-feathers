@@ -1,0 +1,19 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://4crf4p5dg3l1" path="res://scenes/items/pickups/_/pickup.tscn" id="1_pickup"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_crust"]
+albedo_color = Color(0.82, 0.55, 0.25, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_bread"]
+material = SubResource("Mat_crust")
+size = Vector3(0.7, 0.4, 0.4)
+
+[node name="Whole Loaf" instance=ExtResource("1_pickup")]
+full_heal = true
+
+[node name="Collision" parent="." index="0"]
+transform = Transform3D(0.3, 0, 0, 0, 0.3, 0, 0, 0, 0.3, 0, 0, 0)
+
+[node name="Bread" type="MeshInstance3D" parent="Body" index="0"]
+mesh = SubResource("Mesh_bread")

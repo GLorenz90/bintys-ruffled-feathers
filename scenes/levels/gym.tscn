@@ -19,6 +19,10 @@
 [ext_resource type="PackedScene" path="res://scenes/world/push_block.tscn" id="31_push"]
 [ext_resource type="Script" path="res://scenes/world/water_volume.gd" id="32_water"]
 
+[ext_resource type="PackedScene" path="res://scenes/items/pickups/health_crumb.tscn" id="40_crumb"]
+[ext_resource type="PackedScene" path="res://scenes/items/pickups/health_slice.tscn" id="41_slice"]
+[ext_resource type="PackedScene" path="res://scenes/items/pickups/health_loaf.tscn" id="42_loaf"]
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_tipki"]
 sky_top_color = Color(0.20552272, 0.43556347, 0.8057423, 1)
 sky_horizon_color = Color(0.43361023, 0.5078178, 0.68277293, 1)
@@ -386,3 +390,12 @@ mesh = SubResource("Mesh_water")
 
 [node name="Collision" type="CollisionShape3D" parent="Pool"]
 shape = SubResource("Shape_water")
+
+[node name="BreadCrumb" parent="." instance=ExtResource("40_crumb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0.5, 0)
+
+[node name="BreadSlice" parent="." instance=ExtResource("41_slice")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.5, 0)
+
+[node name="WholeLoaf" parent="." instance=ExtResource("42_loaf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.5, 0)

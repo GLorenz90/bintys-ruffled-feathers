@@ -156,6 +156,12 @@ const GRUNT_KNOCKBACK_FRICTION := 25.0; # How quickly knockback slides to a stop
 const GRUNT_SILVER_DROP := 3;           # Small silver dropped on defeat.
 #endregion =====================================================================
 
+#region ENEMY DROPS ============================================================
+# On top of their silver, defeated enemies may drop health. Rolled once per enemy; never a full heal.
+const ENEMY_DROP_CRUMB_CHANCE := 0.25;  # Bread Crumb, +1 health.
+const ENEMY_DROP_SLICE_CHANCE := 0.03;  # Bread Slice, +3 health. Very rare.
+#endregion =====================================================================
+
 #region ENEMY: TRAINING DUMMY ==================================================
 const DUMMY_HEAL_DELAY := 2.0;          # Heals back to full this long after the last hit. Never dies.
 #endregion =====================================================================
