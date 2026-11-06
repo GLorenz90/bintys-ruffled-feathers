@@ -76,18 +76,18 @@ const PUSH_REACH := 0.75;               # How far ahead we feel for a pushable b
 #endregion =====================================================================
 
 #region SWIMMING ===============================================================
-# Binty is a rubber duck: she floats. The roll button dives, and she bobs back up when you let go.
+# Binty is a rubber duck: she floats on the surface. Roll (crouch) dives. Underwater, roll goes down,
+# jump goes up, and letting go of both holds your depth. Air only runs down while you're under.
 const SWIM_ENTER_DEPTH := 0.4;          # Feet this far under the surface starts swimming.
 const SWIM_FLOAT_DEPTH := 0.5;          # While floating, feet sit this far under the surface.
 const SWIM_BOB_SHARPNESS := 6.0;        # How quickly she settles to floating depth.
 const SWIM_SPEED := 5.0;
 const SWIM_ACCELERATION := 15.0;
 const SWIM_DECELERATION := 6.0;         # Low: you drift a little in water.
-const DIVE_START_SPEED := 4.0;          # Downward push when you dive.
+const DIVE_SUBMERGE_DEPTH := 2.3;       # Diving always carries you this far under (feet below the surface), so you're fully under.
 const DIVE_SPEED := 4.0;                # Swimming speed underwater, in any direction.
 const DIVE_VERTICAL_SPEED := 3.5;       # Hold jump to rise, roll to sink.
-const DIVE_BUOYANCY := 2.0;             # Rising speed underwater when you're not pushing either way.
-const DIVE_VERTICAL_ACCELERATION := 10.0;
+const DIVE_VERTICAL_ACCELERATION := 20.0; # How quickly up / down speed builds and settles back to holding depth.
 const AIR_MAX := 10.0;                  # Seconds of air underwater...
 const AIR_REFILL_RATE := 5.0;           # ...refilled at this many seconds per second above water.
 const DROWN_DAMAGE_INTERVAL := 1.0;     # Out of air: lose 1 health this often.

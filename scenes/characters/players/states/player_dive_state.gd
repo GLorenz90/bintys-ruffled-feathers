@@ -1,15 +1,19 @@
 extends PlayerState
 class_name PlayerDiveState
 
-# Underwater. Hold jump to swim up, hold roll to swim down; let go of both and you bob back up.
+# Underwater. A dive first carries you fully under (DIVE_SUBMERGE_DEPTH). After that, hold roll (crouch)
+# to swim down, hold jump to swim up, and let go of both to hold your depth.
+# Swimming up to floating height puts you back on the surface.
 # Air runs out over AIR_MAX seconds, then you lose a health every DROWN_DAMAGE_INTERVAL.
 # Back at the surface you're floating again (PlayerSwimState), and air refills.
 
 var _time_without_air := 0.0;
+var _submerging := false; # Still on the way down from the surface.
 
 func enter(_previous: Enums.PLAYER_STATES) -> void:
-  player.velocity.y = -CharStats.DIVE_START_SPEED;
+  player.velocity.y = -CharStats.DIVE_VERTICAL_SPEED;
   _time_without_air = 0.0;
+  _submerging = true;
 #/enter
 
 func physics_update(delta: float) -> void:
@@ -18,7 +22,7 @@ func physics_update(delta: float) -> void:
     return;
   #/if
   var floating_height := player.env.get_water_surface() - CharStats.SWIM_FLOAT_DEPTH;
-  if player.global_position.y >= floating_height && player.velocity.y >= 0.0:
+  if !_submerging && player.global_position.y >= floating_height && player.velocity.y >= 0.0:
     player.change_state(Enums.PLAYER_STATES.SWIM);
     return;
   #/if
@@ -26,9 +30,14 @@ func physics_update(delta: float) -> void:
   player.move_horizontally(delta, CharStats.DIVE_SPEED, CharStats.SWIM_ACCELERATION, CharStats.SWIM_DECELERATION);
   player.turn_toward_input(delta);
 
-  var vertical_target := CharStats.DIVE_BUOYANCY;
-  if player.jump.held: vertical_target = CharStats.DIVE_VERTICAL_SPEED;
-  if player.roll.held: vertical_target = -CharStats.DIVE_VERTICAL_SPEED;
+  var surface := player.env.get_water_surface();
+  if _submerging && (player.global_position.y <= surface - CharStats.DIVE_SUBMERGE_DEPTH || player.is_on_floor()):
+    _submerging = false;
+  #/if
+
+  var vertical_target := 0.0;
+  if _submerging || player.roll.held: vertical_target = -CharStats.DIVE_VERTICAL_SPEED;
+  if !_submerging && player.jump.held: vertical_target = CharStats.DIVE_VERTICAL_SPEED;
   player.velocity.y = move_toward(player.velocity.y, vertical_target, CharStats.DIVE_VERTICAL_ACCELERATION * delta);
 
   player.env.use_air(delta);

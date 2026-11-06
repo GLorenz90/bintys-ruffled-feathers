@@ -2,7 +2,7 @@ extends PlayerState
 class_name PlayerSwimState
 
 # Floating at the surface. Binty's a rubber duck: she bobs on top of the water.
-#   Jump: leap out.   Roll: dive under (see PlayerDiveState).
+#   Jump: leap out.   Roll (crouch): dive under (see PlayerDiveState).
 # Walking out into shallow water ends it.
 
 func enter(_previous: Enums.PLAYER_STATES) -> void:

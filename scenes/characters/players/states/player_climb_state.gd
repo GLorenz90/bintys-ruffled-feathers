@@ -2,18 +2,21 @@ extends PlayerState
 class_name PlayerClimbState
 
 # On a ladder or rope (player.env.grabbed_climbable).
-#   Push toward it to climb up, away from it to climb down. This works whatever the camera angle, and
-#   means walking into a ladder and keeping the stick held carries straight on up it.
+#   Up / down on the stick climbs up / down, whatever the camera is doing.
+#   Left / right on the stick moves round a rope (and does nothing on a ladder).
 #   The top of a ladder climbs off onto whatever it leans on.
-#   Left / right (relative to the way you're facing) moves round a rope.
+# If you grabbed it while holding down (walking into it toward the camera), down is ignored until you
+# let the stick go back to the middle, so you don't climb straight back off.
 #   Jump: leap off, away from it.   Roll: let go.
 
 const LADDER_CLIMB_OFF_DISTANCE := 0.8; # How far past the top of a ladder you step when climbing off.
 const TOP_MARGIN := 1.2;                # Feet stop this far below the top, so your head doesn't poke above it.
+const STICK_THRESHOLD := 0.3;
 
 var _climbable: Climbable;
 var _height := 0.0;      # Feet height on the climbable.
 var _rope_angle := 0.0;  # Where round the rope we are (radians).
+var _ignore_down := false;
 
 func enter(_previous: Enums.PLAYER_STATES) -> void:
   _climbable = player.env.grabbed_climbable;
@@ -24,6 +27,7 @@ func enter(_previous: Enums.PLAYER_STATES) -> void:
 
   var offset := player.global_position - _climbable.get_axis_point(player.global_position.y);
   _rope_angle = atan2(offset.x, offset.z);
+  _ignore_down = _get_climb_input() < -STICK_THRESHOLD;
   _snap_to_climbable();
 #/enter
 
@@ -46,10 +50,12 @@ func physics_update(delta: float) -> void:
     return;
   #/if
 
-  var toward := -_get_away_direction();
-  var right := toward.cross(Vector3.UP);
-  var stick := player.get_move_direction();
-  _height += stick.dot(toward) * CharStats.CLIMB_SPEED * delta;
+  var climb_input := _get_climb_input();
+  if _ignore_down:
+    if climb_input > -STICK_THRESHOLD: _ignore_down = false;
+    climb_input = maxf(climb_input, 0.0);
+  #/if
+  _height += climb_input * CharStats.CLIMB_SPEED * delta;
 
   if _height > _get_top_limit():
     if _climbable.kind == Climbable.KINDS.LADDER:
@@ -63,7 +69,7 @@ func physics_update(delta: float) -> void:
     return;
   #/if
 
-  if _climbable.kind == Climbable.KINDS.ROPE: _rope_angle += stick.dot(right) * CharStats.ROPE_ORBIT_SPEED * delta;
+  if _climbable.kind == Climbable.KINDS.ROPE: _rope_angle += player.move_input.x * CharStats.ROPE_ORBIT_SPEED * delta;
   player.velocity = Vector3.ZERO;
   _snap_to_climbable();
 #/physics_update
@@ -74,6 +80,11 @@ func _snap_to_climbable() -> void:
   player.global_position = _climbable.get_axis_point(_height) + away * offset;
   player.face_direction(-away);
 #/_snap_to_climbable
+
+# Up on the stick is positive. (Raw stick, so the camera angle doesn't matter.)
+func _get_climb_input() -> float:
+  return -player.move_input.y;
+#/_get_climb_input
 
 # From the ladder or rope toward the climber.
 func _get_away_direction() -> Vector3:
