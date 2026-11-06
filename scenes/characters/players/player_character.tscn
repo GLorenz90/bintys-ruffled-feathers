@@ -13,6 +13,7 @@ albedo_texture = ExtResource("5_0dwey")
 script = ExtResource("1_h3p8d")
 char_type = 0
 is_p1 = true
+debug_states = false
 
 [node name="Collision" parent="." index="0" unique_id=1139686417]
 shape = ExtResource("2_ai33d")
