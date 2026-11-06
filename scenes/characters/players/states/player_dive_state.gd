@@ -3,7 +3,7 @@ class_name PlayerDiveState
 
 # Underwater. A dive first carries you fully under (DIVE_SUBMERGE_DEPTH). After that, hold roll (crouch)
 # to swim down, hold jump to swim up, and let go of both to hold your depth.
-# Swimming up to floating height puts you back on the surface.
+# Coming up to within DIVE_SURFACE_SNAP of floating height snaps you back onto the surface.
 # Air runs out over AIR_MAX seconds, then you lose a health every DROWN_DAMAGE_INTERVAL.
 # Back at the surface you're floating again (PlayerSwimState), and air refills.
 
@@ -22,7 +22,7 @@ func physics_update(delta: float) -> void:
     return;
   #/if
   var floating_height := player.env.get_water_surface() - CharStats.SWIM_FLOAT_DEPTH;
-  if !_submerging && player.global_position.y >= floating_height && player.velocity.y >= 0.0:
+  if !_submerging && !player.roll.held && player.global_position.y >= floating_height - CharStats.DIVE_SURFACE_SNAP:
     player.change_state(Enums.PLAYER_STATES.SWIM);
     return;
   #/if

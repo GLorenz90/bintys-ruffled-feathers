@@ -85,6 +85,7 @@ const SWIM_SPEED := 5.0;
 const SWIM_ACCELERATION := 15.0;
 const SWIM_DECELERATION := 6.0;         # Low: you drift a little in water.
 const DIVE_SUBMERGE_DEPTH := 2.3;       # Diving always carries you this far under (feet below the surface), so you're fully under.
+const DIVE_SURFACE_SNAP := 0.1;         # Rising to within this of floating height snaps you back up to the surface.
 const DIVE_SPEED := 4.0;                # Swimming speed underwater, in any direction.
 const DIVE_VERTICAL_SPEED := 3.5;       # Hold jump to rise, roll to sink.
 const DIVE_VERTICAL_ACCELERATION := 20.0; # How quickly up / down speed builds and settles back to holding depth.
