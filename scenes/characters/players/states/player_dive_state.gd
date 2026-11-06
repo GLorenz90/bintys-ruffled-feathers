@@ -10,10 +10,11 @@ class_name PlayerDiveState
 var _time_without_air := 0.0;
 var _submerging := false; # Still on the way down from the surface.
 
-func enter(_previous: Enums.PLAYER_STATES) -> void:
-  player.velocity.y = -CharStats.DIVE_VERTICAL_SPEED;
+func enter(previous: Enums.PLAYER_STATES) -> void:
   _time_without_air = 0.0;
-  _submerging = true;
+  # Coming back from a bump underwater, carry on from where we are instead of diving again.
+  _submerging = previous != Enums.PLAYER_STATES.WATER_HURT;
+  if _submerging: player.velocity.y = -CharStats.DIVE_VERTICAL_SPEED;
 #/enter
 
 func physics_update(delta: float) -> void:

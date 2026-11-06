@@ -85,7 +85,8 @@ var time_since_grounded := 0.0;   # For coyote time.
 var can_flap := true;              # One flap per time in the air. Reset on landing.
 var carried_speed := 0.0;          # Roll speed kept through a roll-jump until landing. 0 = none.
 var attack_index := 0;             # Which swing in the combo comes next.
-var hurt_direction := Vector3.ZERO; # Which way the last hit knocked us.
+var hurt_direction := Vector3.ZERO; # Which way the last hit knocked us (flat).
+var hurt_from_position := Vector3.ZERO; # Where the last hit came from.
 var env: PlayerEnvironment;
 var _camera_zones: Array[CameraZone] = []; # Zones we're standing in. The most recently entered one wins.
 var _normal_collision_layer := 0;
@@ -123,6 +124,7 @@ func _ready() -> void:
     Enums.PLAYER_STATES.PUSH: PlayerPushState.new(self),
     Enums.PLAYER_STATES.SWIM: PlayerSwimState.new(self),
     Enums.PLAYER_STATES.DIVE: PlayerDiveState.new(self),
+    Enums.PLAYER_STATES.WATER_HURT: PlayerWaterHurtState.new(self),
   };
   change_state(Enums.PLAYER_STATES.FALL);
 #/_ready
@@ -132,7 +134,7 @@ func _physics_process(delta: float) -> void:
   _update_invulnerable_blink();
   time_since_grounded = 0.0 if is_on_floor() else time_since_grounded + delta;
   env.update(delta);
-  if state != Enums.PLAYER_STATES.DIVE: env.refill_air(delta);
+  if !env.is_underwater(): env.refill_air(delta);
   _start_swimming_if_in_water();
 
   _current_state.time_in_state += delta;
@@ -401,7 +403,7 @@ func _read_input() -> void:
 # Any state that ends up deep enough in water switches to swimming. This one rule lives here instead of
 # in every state, since you can end up in water from almost anything (falling, rolling, getting knocked back).
 var _states_that_handle_water := [
-  Enums.PLAYER_STATES.SWIM, Enums.PLAYER_STATES.DIVE, Enums.PLAYER_STATES.HURT, Enums.PLAYER_STATES.DEAD,
+  Enums.PLAYER_STATES.SWIM, Enums.PLAYER_STATES.DIVE, Enums.PLAYER_STATES.WATER_HURT, Enums.PLAYER_STATES.HURT, Enums.PLAYER_STATES.DEAD,
   Enums.PLAYER_STATES.GHOST, Enums.PLAYER_STATES.LEDGE_HANG, Enums.PLAYER_STATES.LEDGE_CLIMB, Enums.PLAYER_STATES.CLIMB,
 ];
 func _start_swimming_if_in_water() -> void:
@@ -428,7 +430,9 @@ func _update_invulnerable_blink() -> void:
 #region CHARACTER OVERRIDES ========================================================================
 func _on_hurt(_amount: int, from_position: Vector3, _knockback: float) -> void:
   hurt_direction = get_knockback_direction(from_position);
-  change_state(Enums.PLAYER_STATES.HURT);
+  hurt_from_position = from_position;
+  var in_water := state == Enums.PLAYER_STATES.SWIM || state == Enums.PLAYER_STATES.DIVE || state == Enums.PLAYER_STATES.WATER_HURT;
+  change_state(Enums.PLAYER_STATES.WATER_HURT if in_water else Enums.PLAYER_STATES.HURT);
   Signals.player_health_changed.emit(self, _cur_health);
 #/_on_hurt
 

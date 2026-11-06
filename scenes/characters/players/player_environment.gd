@@ -131,6 +131,12 @@ func get_depth() -> float:
   return get_water_surface() - player.global_position.y;
 #/get_depth
 
+# Diving, or bumped around underwater after a hit while diving.
+func is_underwater() -> bool:
+  if player.state == Enums.PLAYER_STATES.DIVE: return true;
+  return player.state == Enums.PLAYER_STATES.WATER_HURT && get_depth() > CharStats.SWIM_FLOAT_DEPTH + 0.2;
+#/is_underwater
+
 func use_air(delta: float) -> void:
   air = maxf(air - delta, 0.0);
 #/use_air

@@ -92,6 +92,9 @@ const DIVE_VERTICAL_ACCELERATION := 20.0; # How quickly up / down speed builds a
 const AIR_MAX := 10.0;                  # Seconds of air underwater...
 const AIR_REFILL_RATE := 5.0;           # ...refilled at this many seconds per second above water.
 const DROWN_DAMAGE_INTERVAL := 1.0;     # Out of air: lose 1 health this often.
+const WATER_HURT_KNOCKBACK := 4.0;      # Hit while swimming or diving: bumped away this fast (no gravity)...
+const WATER_HURT_DRAG := 8.0;           # ...slowing down at this rate...
+const WATER_HURT_TIME := 0.35;          # ...and back in control after this long.
 #endregion =====================================================================
 
 #region ATTACK =================================================================

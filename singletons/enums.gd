@@ -16,7 +16,8 @@ enum PLAYER_STATES {
   CLIMB,
   PUSH,
   SWIM,
-  DIVE
+  DIVE,
+  WATER_HURT
 }
 
 enum CHARACTERS {
