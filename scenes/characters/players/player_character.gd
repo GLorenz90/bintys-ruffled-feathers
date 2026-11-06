@@ -185,10 +185,17 @@ func try_ground_actions() -> bool:
   return true;
 #/try_ground_actions
 
-# Grabbing things while on the ground: a ladder or rope you walk into, or a block you keep pushing against.
-# Returns true if one started.
+# Grabbing things while on the ground: a ladder or rope you walk into, the top of a ladder you walk off,
+# or a block you keep pushing against. Returns true if one started.
 func try_ground_grabs(delta: float) -> bool:
   var direction := get_move_direction();
+  var ladder_below := env.find_ladder_top_to_step_onto(direction);
+  if ladder_below != null:
+    env.grabbed_climbable = ladder_below;
+    change_state(Enums.PLAYER_STATES.CLIMB);
+    return true;
+  #/if
+
   var climbable := env.get_grabbable_climbable();
   if climbable != null:
     var toward := climbable.get_axis_point(global_position.y) - global_position;

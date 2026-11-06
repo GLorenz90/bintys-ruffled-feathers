@@ -99,6 +99,21 @@ func exit_climbable(climbable: Climbable) -> void:
   _climbables.erase(climbable);
 #/exit_climbable
 
+# A ladder whose top we're standing next to, if we're walking off the edge toward it. null otherwise.
+func find_ladder_top_to_step_onto(move_direction: Vector3) -> Climbable:
+  if time_since_climb_exit < CharStats.CLIMB_REGRAB_DELAY || move_direction.length() < 0.5: return null;
+  for climbable in player.get_tree().get_nodes_in_group("climbables"):
+    if climbable.kind != Climbable.KINDS.LADDER: continue;
+    var top: Vector3 = climbable.get_axis_point(climbable.get_top_height());
+    var front: Vector3 = climbable.get_front();
+    if absf(player.global_position.y - top.y) > 0.3: continue;
+    var standing_spot := top - front * 0.4;
+    var flat := Vector2(player.global_position.x - standing_spot.x, player.global_position.z - standing_spot.z);
+    if flat.length() <= CharStats.LADDER_TOP_MOUNT_REACH && move_direction.normalized().dot(front) > 0.6: return climbable;
+  #/for
+  return null;
+#/find_ladder_top_to_step_onto
+
 # The ladder or rope we're touching, if we're allowed to grab it right now.
 func get_grabbable_climbable() -> Climbable:
   if _climbables.is_empty() || time_since_climb_exit < CharStats.CLIMB_REGRAB_DELAY: return null;

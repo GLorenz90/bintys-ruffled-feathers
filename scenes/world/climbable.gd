@@ -4,7 +4,8 @@ class_name Climbable
 # A ladder or rope. Give it a CollisionShape3D covering where players can grab it.
 #   LADDER: climbed from one side, the side this node's blue (+Z) axis points to. Up and down only.
 #   ROPE:   climbed from any side. Left / right on the stick moves round the rope.
-# It runs from this node's origin up to `height`. Reaching the top of a ladder climbs off onto it.
+# It runs from this node's origin up to `height`. Reaching the top of a ladder climbs off onto whatever
+# it leans on, and walking off that edge next to the ladder's top climbs back down onto it.
 
 enum KINDS { LADDER, ROPE }
 
@@ -12,6 +13,7 @@ enum KINDS { LADDER, ROPE }
 @export var height := 4.5;
 
 func _ready() -> void:
+  add_to_group("climbables");
   collision_layer = 0;
   collision_mask = 2; # Player layer.
   body_entered.connect(_on_body_entered);
